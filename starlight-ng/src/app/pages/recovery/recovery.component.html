@@ -1,0 +1,18 @@
+<app-navbar></app-navbar>
+
+<div class="container py-5">
+    <div class="card card-container">
+        <!-- <img id="profile-img" class="profile-img-card" src="//ssl.gstatic.com/accounts/ui/avatar_2x.png" /> -->
+        <p id="profile-name" class="profile-name-card">Please enter your email address to change your password.</p> <br>
+        <form (ngSubmit)="recover()" class="form-signin" ngNativeValidate>
+            <input name="email" [(ngModel)]="email" type="email" id="inputEmail" class="form-control" placeholder="Email address" required>
+            <div class="error-message">{{ errorMessage }}</div> <br>
+            <button class="btn btn-lg btn-success btn-block btn-signin" type="submit">Submit</button>
+        </form><!-- /form -->
+        
+        <a href="login" class="forgot-password">
+           Log In
+        </a>
+     
+    </div><!-- /card-container -->
+</div><!-- /container -->

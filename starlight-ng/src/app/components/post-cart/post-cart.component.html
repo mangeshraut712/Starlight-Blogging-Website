@@ -1,0 +1,74 @@
+<div class="posts-container">
+    <div class="post">
+      <div class="post-head">
+        <h4 class="post-author">{{currentPost.author_name}}</h4>
+        <h5 class="post-date">{{currentPost.created_at}}</h5>
+      </div>
+
+      <div class="post-content">
+        <h3 class="post-title">{{currentPost.title}}</h3>
+        <p class="cart-text">{{currentPost.content}}</p>
+      </div>
+
+      <div class="post-stats">
+        <!-- like button -->
+        <a (click)="toggleLike()">
+          <i class="bi fs-4" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
+        </a>
+        &nbsp;
+        <span class="counter cart-logo">{{currentPost.likes}}</span>
+  
+        <!-- comment button -->
+        <a (click)="showComments()">
+          <i class="bi bi-chat fs-4 cart-logo"></i>
+        </a>
+  
+        <!-- delete button -->
+        <a (click)="deletePost(currentPost)">
+          <i class="bi bi-trash-fill fs-4 cart-logo"></i>
+        </a>
+        
+        <!-- community label -->
+        <a [routerLink]="['/community', currentPost.label]">
+          <h3 class="post-label"> #{{currentPost.label}}</h3>
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  
+    <!-- COMMENT SECTION -->
+  <div class="comment-container">
+    <div *ngIf="seeComments" class="comment-section">
+      <!-- list of comments -->
+      <div class="post-comment">
+        <!-- <ul>
+          <li *ngFor="let comment of comments"> -->
+            <div class="list" *ngFor="let comment of comments">
+              <div class="user">
+                <div class="user-img">
+                  <img src="../../../assets/img/account-icon.png" alt="">
+                </div>
+                <div class="user-meta">
+                  <div class="name">{{ comment.author_name }}</div>
+                  <!-- <div class="day">{{ comment.created_at }}</div> -->
+                </div>
+              </div>
+              <div class="comment-post">{{ comment.body }}</div>
+            </div>
+          <!-- </li>
+        </ul> -->
+      </div>
+  
+      <!-- comment box -->
+      <div class="comment-box">
+        <form (ngSubmit)="submitComment()" method="post">
+          <!-- <textarea name="comment" id="" cols="30" rows="10" placeholder="Write a comment..."></textarea> -->
+          <input id="body" name="body" [(ngModel)]="newComment.body" class="comment-input" type="text" placeholder="Write a comment...">
+          <button class="submit-comment btn btn-success btn-block" type="submit"> 
+            <i class="bi bi-send"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,92 @@
+<!-- Sidebar -->
+<nav   *ngIf="icon=='true'" id="sidebarMenu" class="collapse d-lg-block sidebar collapse bg-white">
+  <div class="position-sticky">
+    <div class="list-group list-group-flush mx-3 mt-4">
+      <!-- Home -->
+      <a
+        (click)="gotoHome()"
+        class="list-group-item list-group-item-action py-3 ripple"
+        aria-current="true"
+      >
+        <i class="bi bi-house"></i>
+        <span>Home</span>
+      </a>
+
+      <!-- New Post -->
+      <a (click)="goToNewPost()" class="list-group-item list-group-item-action py-3 ripple ">
+        <i class="bi bi-pen"> </i>
+      <span>New Post</span>
+      </a>
+
+      <!-- Communities -->
+      <a class="dropdown list-group-item list-group-item-action py-3 ripple "
+      (click)="displayCommunities($event)"
+      id="dropdownUser3" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-houses"></i>
+        <span>Communities</span>
+        <img class="dropdown" src="../../../assets/img/dropdownimg.png" alt="">
+       <!-- <i class="bi bi-chevron-down"></i> -->
+      </a>
+      <div *ngIf="communities"class="dropdown-container">
+        <a *ngFor="let c of communityList" class="dropdown-item" (click)="sendCommunityTag(c)">{{c}}</a>
+      </div>
+      
+    </div>
+  </div>
+</nav>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg bg-success navbar-dark py-3 fixed-top">
+  <div class="container">
+    <!-- Sidebar toggler -->
+    <button 
+      *ngIf="icon=='true'"
+      class="navbar-toggler" 
+      type="button"
+      data-bs-toggle="collapse" 
+      data-bs-target="#sidebarMenu"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Brand -->
+    <a href={{path}} class="navbar-brand">StarLight</a>
+    <!-- Page title -->
+    <h2 class="nav-title">{{title}}</h2>
+
+    <!-- Frontpage navbar toggler -->
+    <button 
+      *ngIf="frontpage=='true'" 
+      class="navbar-toggler" 
+      type="button" 
+      data-bs-toggle="collapse" 
+      data-bs-target="#navmenu"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Logged in right side view -->
+    <div class="right-nav" *ngIf="icon=='true'">
+      <div class="dropdown">
+        <i  class="bi bi-person"></i>
+        <div class="dropdown-content">
+        <a href="/update-profile">Update Profile</a>
+        <!-- <a [routerLink]="['update-profile/', user.id]">Update Profile</a> -->
+        <a id="logout" (click)="logout()">Log Out</a>
+        </div>
+      </div>      
+    </div>
+
+    <!-- Frontpage right side view -->
+    <div  *ngIf="frontpage=='true'" class="collapse navbar-collapse" id="navmenu">
+      <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+              <a href="#about" class="nav-link">About Us</a>
+          </li>
+          <li class="nav-item">
+              <a href="/login" class="nav-link">Log In</a>
+          </li>
+      </ul>
+    </div>
+  </div>
+</nav>

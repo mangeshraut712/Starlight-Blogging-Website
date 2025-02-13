@@ -1,0 +1,33 @@
+<app-navbar icon="true" path="/homepage-posts" title="NEW POST"></app-navbar>
+
+<div class="container">
+  <form (ngSubmit)="createNewPost()" action="">
+    <div class="error-message">{{ errorMessage }}</div> <br>
+    <div class="row">
+      <div class="col-md-6">
+        <input id="input-title" type="text" [(ngModel)]="newPost.title" name="title" placeholder="TITLE"> 
+      </div>
+
+      <div class="col-md-4">
+        <div class="form-group">
+          <p class="label">Please select a label</p>
+          <select  [(ngModel)]="newPost.label" name="label" class="form-control">
+            <!-- <option value="" >Please select a label</option> -->
+            <option *ngFor="let c of communityList">{{c}}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-3 mb-5">
+      <div class="col-md-10">
+        <editor outputFormat="text" [(ngModel)]="newPost.content" name="content" [init]="{ plugins: 'lists link image table code help wordcount' }"></editor>
+      </div>
+
+      <div class="col-md-10 text-center mb-5">
+        <button class="btn btn-lg btn-success btn-block btn-signin" type="submit" (click)="cancelNewPost($event)">Cancel</button>
+        <button class="btn btn-lg btn-success btn-block btn-signin" type="submit">Submit</button>
+      </div>
+    </div>
+  </form>
+</div>

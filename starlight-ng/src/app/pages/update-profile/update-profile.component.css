@@ -1,0 +1,88 @@
+/*
+ * General styles
+ */
+ .card-container.card {
+    max-width: 350px;
+    padding: 40px 40px;
+    border-radius: 2rem;
+}
+
+/*
+ * Card component
+ */
+.card {
+    background-color: #F7F7F7;
+    /* just in case there no content*/
+    padding: 20px 25px 30px;
+    margin: 0 auto 25px;
+    margin-top: 50px;
+    /* shadows and rounded borders */
+    -moz-border-radius: 2px;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+    -moz-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+    -webkit-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+}
+
+.profile-img-card {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 10px;
+    display: block;
+    -moz-border-radius: 50%;
+    -webkit-border-radius: 50%;
+    border-radius: 50%;
+}
+
+/* PROFILE PICTURE STYLING */
+.profile-pic {
+    padding-left: 2rem;
+    display: block;
+}
+
+.hoverable{
+    position: relative;
+    display: block;
+    cursor: pointer;
+    height: 200px;
+    width: 200px;
+    /* border: .5px solid grey; */
+    border: none;
+    border-radius: 50%;
+}   
+
+.hoverable .hover-text{
+    position: absolute;
+    display: none;
+    top: 50%;
+    left:  50%;
+    font-weight: bold;
+    transform: translate(-50%,-50%);   
+    z-index: 2;
+}
+
+.hoverable .background{
+    position: absolute;
+    display: none;
+    top: 0;
+    left:  0;
+    bottom: 0;
+    right: 0;
+    background-color:rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.hoverable:hover .hover-text{
+    display: block;
+}
+
+.hoverable:hover .background{
+    display: block;
+}
+
+#fileInput{
+    display: none;
+}

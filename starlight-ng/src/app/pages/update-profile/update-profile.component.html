@@ -1,0 +1,25 @@
+<app-navbar icon="true" path="/homepage-posts" title="MY PROFILE"></app-navbar>
+
+<div class="container py-5">
+    <div class="card card-container">
+        <div class="profile-pic">
+            <label class="hoverable" for="fileInput">
+                <img id="profile-img" class="profile-img-card"[src]="url ? url :'//ssl.gstatic.com/accounts/ui/avatar_2x.png'" />
+                <div class="hover-text">Change Picture</div>
+                <div class="background"></div>
+            </label>
+            <br/>
+            <input id="fileInput" type='file' (change)="onSelectFile($event)">
+        </div>
+        <form *ngIf="user" (ngSubmit)="updateProfile()" class="form-signin">
+            <div class="error-message">{{ message }}</div>
+            <input type="text" [(ngModel)]="user.first" name="first" id="first-name" class="form-control" value="{{user.first}}">
+            <input type="text" [(ngModel)]="user.last" name="last" id="last-name" class="form-control" value={{user.last}}>
+            <input type="email" [(ngModel)]="user.email" name="email" id="inputEmail" class="form-control" value={{user.email}} readonly >
+            <input type="password" [(ngModel)]="oldPassword" name="oldPassword" id="inputPassword" class="form-control" placeholder="Old Password">
+            <input type="password" [(ngModel)]="user.password" name="password" id="inputConfirmPassword" class="form-control" placeholder="New Password">
+            <button class="btn btn-lg btn-success btn-block btn-signin" type="submit">Update Profile</button>
+            <button class="btn btn-lg btn-success btn-block btn-signin" type="cancel" (click)="goToHome()">Cancel</button>
+        </form><!-- /form -->
+    </div><!-- /card-container -->
+</div><!-- /container -->

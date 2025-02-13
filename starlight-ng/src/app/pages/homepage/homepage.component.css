@@ -1,0 +1,29 @@
+body::before{
+    display: block;
+    content:'';
+    height:60px;
+
+}
+
+.container {
+    padding-top: 3rem;
+}
+
+@media(min-width:768px){
+    .news-input{
+        width: 50%;
+    }
+}
+
+h1{
+    font-size: 2rem;
+}
+
+.btn-success{
+    border-radius: 2rem;;
+}
+
+.main-vid{
+    width: 20rem;
+    height: 10rem;
+}

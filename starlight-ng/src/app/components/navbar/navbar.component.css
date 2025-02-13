@@ -1,0 +1,147 @@
+/* GENERAL STYLING */
+img {
+  margin-left: 1rem;
+  width: 1rem;;
+}
+
+/* MISC STYLING */
+#logout {
+  cursor: pointer;
+}
+
+.nav-title {
+    margin: 0rem auto;
+    /* font-size: 2rem; */
+    text-align: center;
+    color: white;
+     -webkit-text-stroke: 1px #eab5a4;
+}
+ 
+.nav-li {
+    width: 20rem;
+    height: 10rem;
+    margin: 1rem;
+    padding: .5rem;
+    font-size: 1.4rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    border-radius: 2rem;
+    background-color: white;
+}
+
+.nav-li:hover {
+    border-color:  #eab5a4;
+} 
+
+/* SIDEBAR STYLING */
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  padding: 68px 0 0; /* Height of navbar */
+  box-shadow: 0 2px 5px 0 rgb(0 0 0 / 5%), 0 2px 10px 0 rgb(0 0 0 / 5%);
+  width: 16.5rem;
+  z-index: 600;
+}
+
+@media (max-width: 991.98px) {
+  .sidebar {
+
+    width: 50%;
+    
+  }
+}
+
+.sidebar .active {
+  border-radius: 5px;
+  box-shadow: 0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%);
+}
+
+.sidebar-sticky {
+  position: relative;
+  top: 0;
+  height: calc(100vh - 48px);
+  padding-top: 0.5rem;
+  overflow-x: hidden;
+  overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+}
+
+/* DROPDOWN STYLING */
+.dropdown {
+  display: inline-block;
+  position: relative;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  width: 10rem;
+  height: 6rem;
+  margin-left: -8rem;
+  /* overflow: auto; */
+  box-shadow: 0px 10px 10px 0px rgba(0,0,0,0.4);
+  background-color: white;
+  border-radius: .5rem;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content a {
+  display: block;
+  color: #000000;
+  padding: .9rem;
+  text-decoration: none;
+  text-align: justify;
+}
+
+.dropdown-content a:hover {
+  color: #FFFFFF;
+  background-color: #458559;
+}
+
+.dropdown-item {
+  cursor: pointer;
+}
+
+.list-group-item {
+  font-size: 1.2rem;
+  font-weight: 550;
+  padding-bottom: 5rem;
+  cursor: pointer;
+}
+
+.list-group-item:hover {
+  color: white;
+      background-color: #458559;
+}
+
+.dropdown-container {
+  display: block;
+
+  padding-left: 8px;
+  
+}
+
+/* ICONS STYLING */
+.bi {
+  font-size: 2rem;
+  /* margin: 1rem; */
+}
+
+.bi-house,
+.bi-pen,
+.bi-houses {
+    margin-right: .5rem;
+}
+
+.bi-chevron-down {
+    margin-left: .5rem;
+}
+
+.bi-person{
+    color: white;
+    font-size: 2rem;
+}

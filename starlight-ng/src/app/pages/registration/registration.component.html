@@ -1,0 +1,21 @@
+<app-navbar></app-navbar>
+<div class="container py-5">
+    <div class="card card-container">
+        <!-- <img class="profile-img-card" src="//lh3.googleusercontent.com/-6V8xOA6M7BA/AAAAAAAAAAI/AAAAAAAAAAA/rzlHcD0KYwo/photo.jpg?sz=120" alt="" /> -->
+        <img id="profile-img" class="profile-img-card" src="//ssl.gstatic.com/accounts/ui/avatar_2x.png" /> <br>
+        <!-- <p id="profile-name" class="profile-name-card"></p> -->
+
+        <!-- REGISTRATION FORM -->
+        <form (ngSubmit)="login()" class="form-signin" ngNativeValidate>
+            <div class="error-message">{{ errorMessage }}</div>
+            <input type="text" id="first" name="first" class="form-control" placeholder="First Name" [(ngModel)]="first" required >
+            <input type="text" id="last" name="last" class="form-control" placeholder="Last Name" [(ngModel)]="last" required >
+            <input type="email" id="email" name="email" class="form-control" placeholder="Email address" [(ngModel)]="email" required >
+            <input type="password" id="password" name="password" class="form-control" placeholder="Password" [(ngModel)]="password" required>
+            <input type="password" id="confirmpassword" class="form-control" placeholder="Confirm Password" required>
+            <button class="btn btn-lg btn-success btn-block btn-signin" type="submit">Sign Up</button>
+        </form><!-- /form -->
+        <p class="sign-up">Already have an account? <a href="login">Log in</a>!</p>
+
+    </div><!-- /card-container -->
+</div><!-- /container -->
