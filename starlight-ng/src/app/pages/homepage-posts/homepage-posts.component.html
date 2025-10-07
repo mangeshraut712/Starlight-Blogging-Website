@@ -5,19 +5,21 @@
     <div class="col-12">
       <h1 class="mb-4">{{ isMyPostsRoute ? 'My Posts' : 'Dashboard' }}</h1>
 
-      <!-- Sorting Controls - Show for both dashboard and my posts -->
-      <div class="row mb-4" *ngIf="!isLoading && posts && posts.length > 0">
-        <div class="col-md-6">
-          <label for="sortSelect" class="form-label fw-semibold">Sort by:</label>
-          <select id="sortSelect" class="form-select" [(ngModel)]="sortOption" (change)="onSortChange()">
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="most_liked">Most Liked</option>
-            <option value="least_liked">Least Liked</option>
-            <option value="alphabetical">Alphabetical</option>
-            <option value="longest">Longest Content</option>
-            <option value="shortest">Shortest Content</option>
-          </select>
+      <!-- Sorting Controls - Responsive for all devices -->
+      <div class="row mb-4 justify-content-center justify-content-lg-start" *ngIf="!isLoading && posts && posts.length > 0">
+        <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+          <div class="sort-container">
+            <label for="sortSelect" class="form-label fw-semibold text-center text-lg-start mb-2">Sort by:</label>
+            <select id="sortSelect" class="form-select form-select-sm form-select-lg" [(ngModel)]="sortOption" (change)="onSortChange()">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="most_liked">Most Liked</option>
+              <option value="least_liked">Least Liked</option>
+              <option value="alphabetical">Alphabetical</option>
+              <option value="longest">Longest Content</option>
+              <option value="shortest">Shortest Content</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>

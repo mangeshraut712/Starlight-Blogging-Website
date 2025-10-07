@@ -6,3 +6,75 @@
     font-size: 1.5rem;
     color: #6c757d;
 }
+
+/* SORTING CONTROLS STYLING */
+.sort-container {
+    background-color: #f8f9fa;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
+    max-width: 320px;
+}
+
+/* Make select larger and more touch-friendly on mobile */
+.form-select-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.form-select-lg {
+    font-size: 1rem;
+}
+
+@media (min-width: 768px) {
+    .sort-container {
+        margin: 0;
+        max-width: none;
+    }
+}
+
+/* Enhanced label styling for accessibility */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Touch-friendly dropdown styling */
+.form-select {
+    border: 2px solid #ced4da;
+    border-radius: 0.5rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-select:hover {
+    border-color: #adb5bd;
+}
+
+/* Improved spacing for mobile */
+@media (max-width: 767px) {
+    .sort-container {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-size: 1rem;
+        text-align: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .form-select {
+        padding: 0.75rem 1.25rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+    }
+}
