@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Post } from 'src/app/models/post';
 import { PostService } from 'src/app/services/post.service';
 import { AuthService } from 'src/app/services/auth.service';
+import { ActivatedRoute } from '@angular/router';
 
 
 @Component({
@@ -15,20 +16,26 @@ export class HomepagePostsComponent {
   isLoading = false;
   sortOption = 'newest';
   filterOption = 'all';
+  isMyPostsRoute = false;
 
   constructor(
     private postService: PostService,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(){
+    // Check if this is the "My Posts" route
+    this.route.data.subscribe(data => {
+      this.isMyPostsRoute = data['onlyUserPosts'] === true;
+    });
     this.loadPosts();
   }
 
   loadPosts() {
     this.isLoading = true;
-    const uid = Number(this.authService.getUid());
-    if (uid) {
+
+    if (this.isMyPostsRoute) {
       // Show only current user's posts
       this.postService.getUserPosts().subscribe(
         (response: Post[]) => {
@@ -41,9 +48,17 @@ export class HomepagePostsComponent {
         }
       );
     } else {
-      // Fallback - shouldn't happen since this is protected route
-      this.posts = [];
-      this.isLoading = false;
+      // Show ALL posts from all users for the main dashboard
+      this.postService.getAllPosts().subscribe(
+        (response: Post[]) => {
+          this.posts = this.sortPosts(response);
+          this.isLoading = false;
+        },
+        (error) => {
+          console.log("error retrieving posts: ", error);
+          this.isLoading = false;
+        }
+      );
     }
   }
 

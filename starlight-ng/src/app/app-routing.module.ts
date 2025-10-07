@@ -41,6 +41,12 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path:'my-posts',
+    component: HomepagePostsComponent,
+    canActivate: [AuthGuard],
+    data: { onlyUserPosts: true }
+  },
+  {
     path:'new-post',
     component: NewPostComponent,
     canActivate: [AuthGuard]
