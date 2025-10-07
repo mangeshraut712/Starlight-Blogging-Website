@@ -28,7 +28,6 @@ export class HomepagePostsComponent {
     // Check if this is the "My Posts" route
     this.route.data.subscribe(data => {
       this.isMyPostsRoute = data['onlyUserPosts'] === true;
-      console.log('Route data:', data, 'isMyPostsRoute:', this.isMyPostsRoute);
     });
     this.loadPosts();
   }
