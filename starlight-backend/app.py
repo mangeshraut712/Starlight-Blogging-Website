@@ -28,7 +28,7 @@ app.permanent_session_lifetime = datetime.timedelta(minutes=30)
 Session(app)
 CORS(app,
      supports_credentials=True,
-     origins=["http://localhost:4200", "http://localhost:56230"],
+     origins=["*"],
      allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
