@@ -5,7 +5,7 @@
     <div class="col-12">
       <h1 class="mb-4">{{ isMyPostsRoute ? 'My Posts' : 'Dashboard' }}</h1>
 
-      <!-- Sorting Controls -->
+      <!-- Sorting Controls - Show for both dashboard and my posts -->
       <div class="row mb-4" *ngIf="!isLoading && posts && posts.length > 0">
         <div class="col-md-6">
           <label for="sortSelect" class="form-label fw-semibold">Sort by:</label>

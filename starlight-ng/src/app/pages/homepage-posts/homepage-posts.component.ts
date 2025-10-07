@@ -51,8 +51,10 @@ export class HomepagePostsComponent {
       // Show ALL posts from all users for the main dashboard
       this.postService.getAllPosts().subscribe(
         (response: Post[]) => {
+          // Apply initial sorting (default newest)
           this.posts = this.sortPosts(response);
           this.isLoading = false;
+          console.log('Dashboard posts loaded:', this.posts.length);
         },
         (error) => {
           console.log("error retrieving posts: ", error);
