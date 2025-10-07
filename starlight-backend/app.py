@@ -53,6 +53,15 @@ def get_current_user():
     user = UserModel.query.filter_by(id=user_id).first()
     return user
 
+@app.route('/')
+def root():
+    return jsonify({
+        'message': 'Starlight Blogging Backend API',
+        'status': 'Running',
+        'timestamp': datetime.datetime.now().isoformat(),
+        'documentation': 'Available endpoints: /api/data, /api/login, /api/register, /api/posts, etc.'
+    })
+
 ################ AUTHENTICATION ROUTES ###############
 @app.route('/api/login', methods=['POST', 'OPTIONS'])
 def login():
