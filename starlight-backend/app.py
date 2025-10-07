@@ -53,6 +53,16 @@ def get_current_user():
     user = UserModel.query.filter_by(id=user_id).first()
     return user
 
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = flask.make_response()
+        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+        return response
+
 @app.route('/')
 def root():
     return jsonify({
