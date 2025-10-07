@@ -94,4 +94,8 @@ export class HomepagePostsComponent {
     // Reload posts after deletion
     this.loadPosts();
   }
+
+  trackByPost(index: number, post: any): any {
+    return post.id;
+  }
 }
