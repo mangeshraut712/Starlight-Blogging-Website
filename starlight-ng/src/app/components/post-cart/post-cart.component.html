@@ -43,10 +43,13 @@
     <div *ngIf="seeComments" class="comment-section">
         <div class="comment-box">
             <form (ngSubmit)="submitComment()" method="post">
-                <textarea [(ngModel)]="newComment.body" name="body" class="comment-input" placeholder="Write a comment..."></textarea>
-                <button class="btn btn-success submit-comment" type="submit">
-                    <i class="bi bi-send"></i>
-                </button>
+                <div class="comment-form-row">
+                    <textarea [(ngModel)]="newComment.body" name="body" class="comment-input" placeholder="Write a comment..." rows="2"></textarea>
+                    <button class="btn btn-success submit-comment" type="submit" [disabled]="!newComment.body || newComment.body.trim() === ''">
+                        <i class="bi bi-send"></i>
+                        Send
+                    </button>
+                </div>
             </form>
         </div>
 
