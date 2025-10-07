@@ -54,7 +54,7 @@ def get_current_user():
     return user
 
 ################ AUTHENTICATION ROUTES ###############
-@app.route('/api/login', methods=['POST'])
+@app.route('/api/login', methods=['POST', 'OPTIONS'])
 def login():
     data = get_data()
     email = data['email'].lower().strip()
@@ -74,7 +74,7 @@ def login():
         return jsonify({'error': 'Invalid email or password.'}), 401
 
 
-@app.route('/api/register', methods=['POST'])
+@app.route('/api/register', methods=['POST', 'OPTIONS'])
 def register():
     data = get_data()
     email = data['email'].lower().strip()

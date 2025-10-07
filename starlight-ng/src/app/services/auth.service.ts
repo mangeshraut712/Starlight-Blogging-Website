@@ -94,7 +94,7 @@ export class AuthService {
     const registerData = { email, first, last, password };
     return this.http.post<any>(`${this.BASE_URL}/api/register`, registerData, httpOptions)
       .pipe(
-        catchError(this.handleError)
+        catchError(this.handleRegisterError)
       );
   }
 
@@ -142,6 +142,44 @@ export class AuthService {
       .pipe(
         catchError(this.handleError)
       );
+  }
+
+  /**
+   * Handle registration errors specifically
+   */
+  private handleRegisterError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'Registration failed';
+
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Registration Client Error: ${error.error.message}`;
+    } else {
+      // Server-side error
+      switch (error.status) {
+        case 400:
+          errorMessage = 'Invalid registration data. Please check your input.';
+          break;
+        case 401:
+          // Special case for existing user
+          if (error.error && error.error.error) {
+            errorMessage = error.error.error; // "This email belongs to an already existing user"
+          } else {
+            errorMessage = 'Registration unauthorized. Please try a different email.';
+          }
+          break;
+        case 409:
+          errorMessage = 'User with this email already exists. Please use a different email or try logging in.';
+          break;
+        case 500:
+          errorMessage = 'Server error during registration. Please try again later.';
+          break;
+        default:
+          errorMessage = `Registration failed: ${error.status} - ${error.message || 'Unknown error'}`;
+      }
+    }
+
+    console.error('Registration Error:', errorMessage, error);
+    return throwError(() => new Error(errorMessage));
   }
 
   /**

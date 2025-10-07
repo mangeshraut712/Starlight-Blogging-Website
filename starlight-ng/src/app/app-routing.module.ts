@@ -51,6 +51,11 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path:'communities',
+    component: CommunitiesComponent,
+    canActivate: [AuthGuard]
+  },
+  {
     path:'update-profile',
     component: UpdateProfileComponent,
     canActivate: [AuthGuard]

@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-modern">
   <div class="container-fluid px-4">
     <!-- Brand Logo - Left Side -->
-    <a class="navbar-brand d-flex align-items-center" routerLink="/" aria-label="Starlight Home">
+    <a class="navbar-brand d-flex align-items-center" [routerLink]="isLoggedIn() ? '/homepage-posts' : '/'" aria-label="Starlight Home">
       <div class="brand-logo-container">
         <img src="assets/img/starlight-logo.svg" alt="Starlight Logo" class="brand-logo" width="32" height="32">
         <span class="brand-text">Starlight</span>
