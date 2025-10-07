@@ -12,7 +12,16 @@ export class DataService {
     "Fiction",
     "Horror",
     "Romance",
-    "Adventure"
+    "Adventure",
+    "Technology",
+    "Science",
+    "Business",
+    "Sports",
+    "Music",
+    "Art",
+    "Travel",
+    "Food",
+    "Health"
   ];
 
 }

@@ -121,37 +121,44 @@ export class PostCartComponent {
   }
 
   submitComment() {
-    this.postService.commentPost(this.currentPost.id, this.newComment.body).subscribe(
-      (comment) => {
-        this.comments.push(comment);
+    if (!this.newComment.body || this.newComment.body.trim() === '') {
+      return; // Don't submit empty comments
+    }
+
+    this.postService.commentPost(this.currentPost.id, this.newComment.body.trim()).subscribe(
+      (comment: Comment) => {
+        this.comments.unshift(comment); // Add to beginning of array for newest first
         this.newComment.body = "";
         this.successMessage = 'Comment added successfully!';
         setTimeout(() => this.successMessage = '', 3000);
       },
       (error) => {
-        console.log(error);
+        console.log('Error posting comment:', error);
+        this.successMessage = 'Failed to add comment. Please try again.';
+        setTimeout(() => this.successMessage = '', 3000);
       }
     )
   }
 
   toggleLike() {
-    if(this.isLiked){
-      // Unlike the post
-      this.postService.likePost(this.currentPost.id).subscribe(
-        (response) => {
-          this.currentPost.likes -= 1;
-          this.isLiked = false;
-        }
-      );
-    } else {
-      // Like the post
-      this.postService.likePost(this.currentPost.id).subscribe(
-        (response) => {
-          this.currentPost.likes += 1;
-          this.isLiked = true;
-        }
-      );
-    }
+    this.postService.likePost(this.currentPost.id).subscribe(
+      (response: any) => {
+        // Toggle the liked state
+        this.isLiked = !this.isLiked;
+        // Refresh likes from server to get accurate count
+        this.postService.getPostLikes(this.currentPost.id).subscribe(
+          (likes) => {
+            this.currentPost.likes = likes.length;
+          },
+          (error) => {
+            console.log('Error getting likes:', error);
+          }
+        );
+      },
+      (error) => {
+        console.log('Error toggling like:', error);
+      }
+    );
   }
 
   toggleReadMore() {
