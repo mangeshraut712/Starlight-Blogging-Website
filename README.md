@@ -4,10 +4,6 @@
 
 A **premium, modern blogging platform** inspired by Medium and Hashnode, where writers can connect, share their cosmic stories, and build communities under the stars. ⭐✨
 
-![StarLight Hero](<img width="1512" height="858" alt="Screenshot 2025-10-07 at 3 11 08 PM" src="https://github.com/user-attachments/assets/70220c0f-1719-464b-adf8-5df4e91a8b8e" />)
-![StarLight](<img width="1512" height="853" alt="Screenshot 2025-10-07 at 3 11 40 PM" src="https://github.com/user-attachments/assets/a4c20a33-39d6-42cd-8d2a-8166aa882945" />
-)
-
 <div align="center">
   <img src="starlight-ng/src/assets/img/starlight-logo.svg" alt="StarLight Logo" width="120" style="margin: 20px 0;">
 </div>
