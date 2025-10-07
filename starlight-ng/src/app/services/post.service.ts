@@ -56,7 +56,7 @@ export class PostService {
   likePost(postId:number) {
     // const body = { action: action };
     // return this.http.post(`${this.postsApiUrl}/${postId}/like`, body);
-    return this.http.post(`${this.BASE_URL}/api/posts/${postId}/like`, {});
+    return this.http.post(`${this.BASE_URL}/api/posts/${postId}/like`, {}, httpOptions);
   }
 
   getPostLikes(postId:number): Observable<Like[]> {
