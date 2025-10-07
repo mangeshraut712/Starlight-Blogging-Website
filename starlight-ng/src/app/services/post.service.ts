@@ -66,7 +66,7 @@ export class PostService {
   commentPost(postId:number, body:string) {
     // const body = { action: action };
     // return this.http.post(`${this.postsApiUrl}/${postId}/comment`, body);
-    return this.http.post(`${this.BASE_URL}/api/posts/${postId}/comments`, {body}); 
+    return this.http.post(`${this.BASE_URL}/api/posts/${postId}/comments`, {body}, httpOptions);
   }
 
   getPostComments(postId:number): Observable<Comment[]> {

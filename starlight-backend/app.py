@@ -300,7 +300,7 @@ def get_post_by_id(post_id):
 
 
 #liking a post
-@app.route('/api/posts/<int:post_id>/like', methods=['POST'])
+@app.route('/api/posts/<int:post_id>/like', methods=['POST','OPTIONS'])
 def like_post(post_id):
     user_id = get_current_user_id()
     if not user_id:
@@ -340,7 +340,7 @@ def get_post_likes(post_id):
 
 
 #comment on post
-@app.route('/api/posts/<int:post_id>/comments', methods=['GET','POST'])
+@app.route('/api/posts/<int:post_id>/comments', methods=['GET','POST','OPTIONS'])
 def comments(post_id):
     if request.method == 'GET':
         comments = Comment.query.filter_by(post_id=post_id).all()
