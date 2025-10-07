@@ -33,8 +33,9 @@ export class PostService {
   }
 
   getUserPosts(): Observable<Post[]> {
+    console.log('PostService: Calling getUserPosts()');
     // return this.http.get<Post[]>(this.postsApiUrl);
-    return this.http.get<Post[]>(`${this.BASE_URL}/api/user-posts`);
+    return this.http.get<Post[]>(`${this.BASE_URL}/api/user-posts`, httpOptions);
   }
 
   getPost(id: number) {
