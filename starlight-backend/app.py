@@ -373,8 +373,52 @@ def delete_post(post_id):
     post = PostModel.query.filter_by(id=post_id).first()
     db.session.delete(post)
     db.session.commit()
- 
+
     return jsonify("Post was deleted"), 200
+
+#delete comment
+@app.route('/api/delete-comment/<int:comment_id>', methods=["DELETE"])
+def delete_comment(comment_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
+
+    comment = Comment.query.filter_by(id=comment_id).first()
+    if not comment:
+        return jsonify({'error': 'Comment not found'}), 404
+
+    if comment.author_id != user_id:
+        return jsonify({'error': 'Not authorized to delete this comment'}), 403
+
+    db.session.delete(comment)
+    db.session.commit()
+
+    return jsonify("Comment was deleted"), 200
+
+#update comment
+@app.route('/api/update-comment/<int:comment_id>', methods=['PUT'])
+def update_comment(comment_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
+
+    data = get_data()
+    new_body = data.get('body', '').strip()
+
+    if not new_body:
+        return jsonify({'error': 'Comment body cannot be empty'}), 400
+
+    comment = Comment.query.filter_by(id=comment_id).first()
+    if not comment:
+        return jsonify({'error': 'Comment not found'}), 404
+
+    if comment.author_id != user_id:
+        return jsonify({'error': 'Not authorized to edit this comment'}), 403
+
+    comment.body = new_body
+    db.session.commit()
+
+    return jsonify(comment.serialize()), 200
 
 
 # running the server

@@ -72,4 +72,12 @@ export class PostService {
   getPostComments(postId:number): Observable<Comment[]> {
     return this.http.get<Comment[]>(`${this.BASE_URL}/api/posts/${postId}/comments`);
   }
+
+  deleteComment(commentId: number) {
+    return this.http.delete(`${this.BASE_URL}/api/delete-comment/${commentId}`, httpOptions);
+  }
+
+  updateComment(commentId: number, body: string) {
+    return this.http.put(`${this.BASE_URL}/api/update-comment/${commentId}`, { body }, httpOptions);
+  }
 }

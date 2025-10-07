@@ -34,6 +34,8 @@ export class PostCartComponent {
   body:string = "";
   successMessage: string = "";
   isExpanded = false;
+  editingCommentId: number | null = null;
+  editingCommentText: string = "";
   
     
   constructor(
@@ -163,5 +165,61 @@ export class PostCartComponent {
 
   toggleReadMore() {
     this.isExpanded = !this.isExpanded;
+  }
+
+  editComment(comment: Comment) {
+    this.editingCommentId = comment.id;
+    this.editingCommentText = comment.body;
+  }
+
+  cancelEdit() {
+    this.editingCommentId = null;
+    this.editingCommentText = '';
+  }
+
+  saveCommentEdit(comment: Comment) {
+    if (!this.editingCommentText.trim()) {
+      return; // Don't save empty comments
+    }
+
+    this.postService.updateComment(comment.id, this.editingCommentText.trim()).subscribe(
+      (updatedComment: Comment) => {
+        // Update the comment in the array
+        const index = this.comments.findIndex(c => c.id === comment.id);
+        if (index !== -1) {
+          this.comments[index] = updatedComment;
+        }
+        this.cancelEdit();
+        this.successMessage = 'Comment updated successfully!';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      (error) => {
+        console.log('Error updating comment:', error);
+        this.successMessage = 'Failed to update comment. Please try again.';
+        setTimeout(() => this.successMessage = '', 3000);
+      }
+    );
+  }
+
+  deleteComment(comment: Comment) {
+    if (confirm('Are you sure you want to delete this comment?')) {
+      this.postService.deleteComment(comment.id).subscribe(
+        (response) => {
+          // Remove comment from the array
+          this.comments = this.comments.filter(c => c.id !== comment.id);
+          this.successMessage = 'Comment deleted successfully!';
+          setTimeout(() => this.successMessage = '', 3000);
+        },
+        (error) => {
+          console.log('Error deleting comment:', error);
+          this.successMessage = 'Failed to delete comment. Please try again.';
+          setTimeout(() => this.successMessage = '', 3000);
+        }
+      );
+    }
+  }
+
+  isOwnComment(comment: Comment): boolean {
+    return this.user && this.user.id === comment.author_id;
   }
 }

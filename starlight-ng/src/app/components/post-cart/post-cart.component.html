@@ -64,7 +64,32 @@
                         <div class="day">{{ comment.created_at | date:'short' }}</div>
                     </div>
                 </div>
-                <div class="comment-post">{{ comment.body }}</div>
+                <div class="comment-content">
+                    <div class="comment-post" *ngIf="editingCommentId !== comment.id">{{ comment.body }}</div>
+
+                    <!-- Edit comment form -->
+                    <div class="edit-comment-section" *ngIf="editingCommentId === comment.id">
+                        <textarea [(ngModel)]="editingCommentText" class="edit-comment-input" rows="2"></textarea>
+                        <div class="edit-actions">
+                            <button class="btn btn-success btn-sm me-2" (click)="saveCommentEdit(comment)">
+                                <i class="bi bi-check"></i> Save
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" (click)="cancelEdit()">
+                                <i class="bi bi-x"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comment actions (only for user's own comments) -->
+                <div class="comment-actions" *ngIf="isOwnComment(comment)">
+                    <button class="btn btn-sm btn-outline-primary me-2" *ngIf="editingCommentId !== comment.id" (click)="editComment(comment)">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" (click)="deleteComment(comment)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
