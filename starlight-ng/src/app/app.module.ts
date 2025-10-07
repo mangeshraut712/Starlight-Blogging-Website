@@ -3,7 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { ToastModule } from '@coreui/angular';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { EditorModule } from '@tinymce/tinymce-angular';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogModule } from '@angular/material/dialog';
 import { HttpClientModule } from '@angular/common/http'; 
 import { DatePipe } from '@angular/common';
@@ -24,6 +24,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { UpdateProfileComponent } from './pages/update-profile/update-profile.component';
 import { PopUpComponent } from './components/pop-up/pop-up.component';
 import { CommunityLabelComponent } from './pages/community-label/community-label.component';
+import { CommunitiesComponent } from './pages/communities/communities.component';
 
 // SERVICES
 import { AuthService } from './services/auth.service';
@@ -47,6 +48,7 @@ import { DataService } from './services/data.service';
     UpdateProfileComponent,
     PopUpComponent,
     CommunityLabelComponent,
+    CommunitiesComponent
   ],
   imports: [
     BrowserModule,
@@ -56,6 +58,7 @@ import { DataService } from './services/data.service';
     MatSnackBarModule,
     EditorModule,
     FormsModule,
+    ReactiveFormsModule,
     MatDialogModule,
     HttpClientModule
   ],

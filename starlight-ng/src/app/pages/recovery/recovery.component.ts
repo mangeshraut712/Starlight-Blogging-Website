@@ -8,9 +8,9 @@ import { AuthService } from 'src/app/services/auth.service';
   styleUrls: ['./recovery.component.css']
 })
 export class RecoveryComponent {
-  errorMessage:string = "";
-  email:string = "";
-  user_id:number;
+  errorMessage: string = "";
+  email: string = "";
+  user_id: number;
   
   constructor(private router: Router, private authService: AuthService) {}
   

@@ -12,11 +12,11 @@ import { UserService } from 'src/app/services/user.service';
 import { PostService } from 'src/app/services/post.service';
 import { AuthService } from 'src/app/services/auth.service';
 
-
 @Component({
   selector: 'app-post-cart',
   templateUrl: './post-cart.component.html',
-  styleUrls: ['./post-cart.component.css']
+  styleUrls: ['./post-cart.component.css'],
+  providers: [DatePipe]
 })
 export class PostCartComponent {
 
@@ -32,6 +32,8 @@ export class PostCartComponent {
   newComment: Comment;
   post: Post;
   body:string = "";
+  successMessage: string = "";
+  isExpanded = false;
   
     
   constructor(
@@ -53,14 +55,8 @@ export class PostCartComponent {
 
   ngOnInit(){
     this.getUser();
-
     this.getPostLikes();
     this.getPostComments();
-
-    console.log("currentPost created_at = " + this.currentPost.created_at);
-    this.currentPost.created_at = this.datePipe.transform(this.currentPost.created_at, 'MM/dd/yyyy');
-    // this.newComment.created_at = this.datePipe.transform(this.newComment.created_at, 'MM/dd/yy HH:mm');
-
   }
 
   getUser(): void {
@@ -91,28 +87,33 @@ export class PostCartComponent {
 
   getPostComments():void {
     this.postService.getPostComments(this.currentPost.id).subscribe(comments => {
-      console.log(comments);
       this.comments = comments;
     });
   }
 
   deletePost(post: Post) {
-    const dialog = this.dialogRef.open(PopUpComponent);
+    const dialog = this.dialogRef.open(PopUpComponent, {
+      data: { message: 'Are you sure you want to delete this post?' }
+    });
+
     dialog.afterClosed().subscribe(result => {
       if (result) {
         this.postService.deletePost(post.id).subscribe(
           (response) => {
-            console.log("deleting post: "+response);
-            this.posts = this.posts.filter(p => p.id !== post.id);
+            this.successMessage = 'Post deleted successfully!';
+            setTimeout(() => this.successMessage = '', 3000);
+            window.location.reload();
           },
           (error) => {
             console.log("Error deleting post ", error);
           }
         );
-        window.location.reload();
-        // this.router.navigate(['homepage-posts']);
       }
     });
+  }
+
+  isOwnPost(): boolean {
+    return this.user && this.user.id === this.currentPost.author_id;
   }
 
   showComments(){
@@ -120,13 +121,12 @@ export class PostCartComponent {
   }
 
   submitComment() {
-    console.log('Submitting comment');
     this.postService.commentPost(this.currentPost.id, this.newComment.body).subscribe(
       (comment) => {
-        console.log(comment);
         this.comments.push(comment);
-        // this.postService.getPostComments(this.currentPost.id).subscribe(comments => this.comments = comments);
         this.newComment.body = "";
+        this.successMessage = 'Comment added successfully!';
+        setTimeout(() => this.successMessage = '', 3000);
       },
       (error) => {
         console.log(error);
@@ -139,7 +139,6 @@ export class PostCartComponent {
       // Unlike the post
       this.postService.likePost(this.currentPost.id).subscribe(
         (response) => {
-          console.log("Unliking post: ", response);
           this.currentPost.likes -= 1;
           this.isLiked = false;
         }
@@ -148,11 +147,14 @@ export class PostCartComponent {
       // Like the post
       this.postService.likePost(this.currentPost.id).subscribe(
         (response) => {
-          console.log("Liking post: ", response);
           this.currentPost.likes += 1;
           this.isLiked = true;
         }
       );
     }
+  }
+
+  toggleReadMore() {
+    this.isExpanded = !this.isExpanded;
   }
 }

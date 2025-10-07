@@ -1,93 +1,188 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 const httpOptions = {
-  headers: new HttpHeaders({ 'Content-Type': 'application/json',Accept:'application/json' })
+  headers: new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }),
+  withCredentials: true
 };
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  // private apiBaseUrl = 'http://localhost:5000';
-  private BASE_URL: string = 'http://localhost:8080';
+  private readonly BASE_URL: string = environment.apiUrl || 'http://localhost:8080';
+  private readonly UID_KEY = 'starlight_uid';
+  private readonly TOKEN_KEY = 'starlight_auth_token';
 
-  private uid="uid";
-  private registerUrl = 'http://localhost:5000/api/register';
-  private logoutUrl = 'http://localhost:5000/api/logout';
-  private dataUrl = 'http://localhost:5000/api/data';
+  constructor(private http: HttpClient) {}
 
-  private loggedIn  = false;
-  private tokenKey = 'my-auth-token';
-
-  constructor(private http: HttpClient) {
-    this.loggedIn  = !!localStorage.getItem('access_token');
-  }
+  /**
+   * Set user ID in localStorage
+   */
   setUid(uid: string): void {
-    
-    localStorage.setItem(this.uid, uid);
-  }
-  getUid(){
-    return localStorage.getItem(this.uid);
+    if (uid) {
+      localStorage.setItem(this.UID_KEY, uid);
+    }
   }
 
-  test(): string {
-    return 'working';
+  /**
+   * Get user ID from localStorage
+   */
+  getUid(): string | null {
+    return localStorage.getItem(this.UID_KEY);
   }
 
+  /**
+   * Check if user is logged in
+   */
   isLoggedIn(): boolean {
-    // return this.loggedIn;
-    const token = localStorage.getItem(this.tokenKey); // Get token from local storage
-    return token != null;
+    const token = this.getToken();
+    return token !== null && token !== '';
   }
 
-  getToken() {
-    return localStorage.getItem(this.tokenKey);
+  /**
+   * Get authentication token from localStorage
+   */
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
   }
 
+  /**
+   * Set authentication token in localStorage
+   */
   setToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
+    if (token) {
+      localStorage.setItem(this.TOKEN_KEY, token);
+    }
   }
 
+  /**
+   * Clear all authentication data
+   */
+  clearAuthData(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.UID_KEY);
+  }
+
+  /**
+   * Login user with email and password
+   */
   login(email: string, password: string): Observable<any> {
-    let url: string = `${this.BASE_URL}/api/login`; //`${this.apiBaseUrl}/register`
-    // return this.http.post<any>(url, {email, password}, httpOptions);
-    const options = { withCredentials: true};
-    return this.http.post<any>(`${this.BASE_URL}/api/login`, {email, password}, httpOptions);
+    const loginData = { email, password };
+    return this.http.post<any>(`${this.BASE_URL}/api/login`, loginData, httpOptions)
+      .pipe(
+        tap(response => {
+          if (response && response.token && response.uid) {
+            this.setToken(response.token);
+            this.setUid(response.uid);
+          }
+        }),
+        catchError(this.handleError)
+      );
   }
 
-  register(email: string, first:string, last:string, password: string): Observable<any> {
-    let url: string = `${this.BASE_URL}/register`; //`${this.apiBaseUrl}/register`
-    // const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    return this.http.post<any>(`${this.BASE_URL}/api/register`, { email, first, last, password }, httpOptions);
+  /**
+   * Register new user
+   */
+  register(email: string, first: string, last: string, password: string): Observable<any> {
+    const registerData = { email, first, last, password };
+    return this.http.post<any>(`${this.BASE_URL}/api/register`, registerData, httpOptions)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
+  /**
+   * Send forgot password email
+   */
   forgotPassword(email: string): Observable<any> {
-    // const url = `${this.BASE_URL}/forgot_password`;
-    // return this.http.post(url, { email });
-    return this.http.post<any>(`${this.BASE_URL}/api/forgot_password`, { email });
+    return this.http.post<any>(`${this.BASE_URL}/api/forgot_password`, { email }, httpOptions)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
-  resetPassword(userId:number, newPassword:string, confirmPassword:string): Observable<any> {
-    // const url = `${this.BASE_URL}/forgot_password`;
-    // return this.http.post(url, { email });
-    const body = {
+  /**
+   * Reset user password
+   */
+  resetPassword(userId: number, newPassword: string, confirmPassword: string): Observable<any> {
+    const resetData = {
       user_id: userId,
       new_password: newPassword,
       confirm_password: confirmPassword
     };
-    return this.http.post<any>(`${this.BASE_URL}/api/reset_password`, body);
+    return this.http.post<any>(`${this.BASE_URL}/api/reset_password`, resetData, httpOptions)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
+  /**
+   * Logout user
+   */
   logout(): Observable<any> {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.uid);
-    return this.http.get<any>(`${this.BASE_URL}/api/logout`);
+    this.clearAuthData();
+    return this.http.get<any>(`${this.BASE_URL}/api/logout`, httpOptions)
+      .pipe(
+        catchError(this.handleError)
+      );
   }
 
+  /**
+   * Get user data
+   */
   getData(): Observable<any> {
-    return this.http.get<any>(`${this.BASE_URL}/api/data`);
+    return this.http.get<any>(`${this.BASE_URL}/api/data`, httpOptions)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * Handle HTTP errors
+   */
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'An unexpected error occurred';
+    
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Client Error: ${error.error.message}`;
+    } else {
+      // Server-side error
+      switch (error.status) {
+        case 400:
+          errorMessage = 'Bad request. Please check your input.';
+          break;
+        case 401:
+          errorMessage = 'Unauthorized. Please check your credentials.';
+          break;
+        case 403:
+          errorMessage = 'Forbidden. You do not have permission to access this resource.';
+          break;
+        case 404:
+          errorMessage = 'Resource not found.';
+          break;
+        case 409:
+          errorMessage = 'Conflict. The resource already exists.';
+          break;
+        case 500:
+          errorMessage = 'Internal server error. Please try again later.';
+          break;
+        case 0:
+          errorMessage = 'Network error. Please check your connection.';
+          break;
+        default:
+          errorMessage = `Server Error: ${error.status} - ${error.message}`;
+      }
+    }
+    
+    console.error('AuthService Error:', errorMessage, error);
+    return throwError(() => new Error(errorMessage));
   }
 }

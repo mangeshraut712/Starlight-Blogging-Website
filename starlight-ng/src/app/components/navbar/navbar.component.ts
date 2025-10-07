@@ -1,60 +1,34 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-// classes
-import { Post } from 'src/app/models/post';
-// services
 import { AuthService } from 'src/app/services/auth.service';
-import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'app-navbar',
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css']
 })
-
 export class NavbarComponent {
-  @Input() title: string = '';
-  @Input() icon:string='';
-  @Input() frontpage:string='';
-  @Input() path:string="";
-  @Output()messageEvent= new EventEmitter();
 
-  communities:boolean=false;
-  communityList:string[];
-  post: Post;
-
-  constructor (
-    private router:Router, 
-    private data: DataService, 
+  constructor(
+    private router: Router,
     private authService: AuthService
-  ){
-    this.communityList= data.communityList;
-    this.post= new Post();
+  ) { }
+
+  isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
   }
 
-  ngOnInit(){
-  }
-  
-  gotoHome(){
-    this.router.navigate(['homepage-posts']);
-  }
-
-  goToNewPost(){
-    this.router.navigate(['new-post']);
-  }
-
-  displayCommunities(event:any){
-    this.communities=!this.communities;
-  }
-
-  sendCommunityTag(tag:string){
-    this.router.navigate(['community', tag]);
-  }
-
-  logout() {
-    this.authService.logout().subscribe(() => {
-      this.router.navigate(['/']);
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/']);
+      },
+      error: (error) => {
+        console.error('Logout error:', error);
+        // Even if logout fails on server, clear local data and redirect
+        this.authService.clearAuthData();
+        this.router.navigate(['/']);
+      }
     });
   }
-
 }

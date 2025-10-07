@@ -1,21 +1,183 @@
-<app-navbar></app-navbar>
-<div class="container py-5">
-    <div class="card card-container">
-        <!-- <img class="profile-img-card" src="//lh3.googleusercontent.com/-6V8xOA6M7BA/AAAAAAAAAAI/AAAAAAAAAAA/rzlHcD0KYwo/photo.jpg?sz=120" alt="" /> -->
-        <img id="profile-img" class="profile-img-card" src="//ssl.gstatic.com/accounts/ui/avatar_2x.png" /> <br>
-        <!-- <p id="profile-name" class="profile-name-card"></p> -->
+<main class="registration-page">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card registration-card">
+          <div class="card-body">
+            <div class="text-center mb-4">
+              <img 
+                src="assets/img/starlight-logo.svg" 
+                alt="Starlight Logo" 
+                class="registration-logo mb-3"
+                width="80" 
+                height="80"
+              >
+              <h2 class="card-title">Join Starlight</h2>
+              <p class="text-muted">Start your writing journey with us</p>
+            </div>
 
-        <!-- REGISTRATION FORM -->
-        <form (ngSubmit)="login()" class="form-signin" ngNativeValidate>
-            <div class="error-message">{{ errorMessage }}</div>
-            <input type="text" id="first" name="first" class="form-control" placeholder="First Name" [(ngModel)]="first" required >
-            <input type="text" id="last" name="last" class="form-control" placeholder="Last Name" [(ngModel)]="last" required >
-            <input type="email" id="email" name="email" class="form-control" placeholder="Email address" [(ngModel)]="email" required >
-            <input type="password" id="password" name="password" class="form-control" placeholder="Password" [(ngModel)]="password" required>
-            <input type="password" id="confirmpassword" class="form-control" placeholder="Confirm Password" required>
-            <button class="btn btn-lg btn-success btn-block btn-signin" type="submit">Sign Up</button>
-        </form><!-- /form -->
-        <p class="sign-up">Already have an account? <a href="login">Log in</a>!</p>
+            <!-- REGISTRATION FORM -->
+            <form (ngSubmit)="onRegister()" class="registration-form" #registrationForm="ngForm" novalidate>
+              <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {{ errorMessage }}
+              </div>
 
-    </div><!-- /card-container -->
-</div><!-- /container -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="first" class="form-label">First Name</label>
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bi bi-person"></i>
+                    </span>
+                    <input 
+                      type="text" 
+                      id="first" 
+                      name="first" 
+                      class="form-control" 
+                      placeholder="Enter your first name" 
+                      [(ngModel)]="first" 
+                      #firstInput="ngModel"
+                      required 
+                      minlength="2"
+                      [class.is-invalid]="firstInput.invalid && firstInput.touched"
+                      autocomplete="given-name"
+                    >
+                    <div *ngIf="firstInput.invalid && firstInput.touched" class="invalid-feedback">
+                      <div *ngIf="firstInput.errors?.['required']">First name is required</div>
+                      <div *ngIf="firstInput.errors?.['minlength']">First name must be at least 2 characters</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="last" class="form-label">Last Name</label>
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bi bi-person"></i>
+                    </span>
+                    <input 
+                      type="text" 
+                      id="last" 
+                      name="last" 
+                      class="form-control" 
+                      placeholder="Enter your last name" 
+                      [(ngModel)]="last" 
+                      #lastInput="ngModel"
+                      required 
+                      minlength="2"
+                      [class.is-invalid]="lastInput.invalid && lastInput.touched"
+                      autocomplete="family-name"
+                    >
+                    <div *ngIf="lastInput.invalid && lastInput.touched" class="invalid-feedback">
+                      <div *ngIf="lastInput.errors?.['required']">Last name is required</div>
+                      <div *ngIf="lastInput.errors?.['minlength']">Last name must be at least 2 characters</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="email" class="form-label">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-envelope"></i>
+                  </span>
+                  <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-control" 
+                    placeholder="Enter your email address" 
+                    [(ngModel)]="email" 
+                    #emailInput="ngModel"
+                    required 
+                    email
+                    [class.is-invalid]="emailInput.invalid && emailInput.touched"
+                    autocomplete="email"
+                  >
+                  <div *ngIf="emailInput.invalid && emailInput.touched" class="invalid-feedback">
+                    <div *ngIf="emailInput.errors?.['required']">Email is required</div>
+                    <div *ngIf="emailInput.errors?.['email']">Please enter a valid email address</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-lock"></i>
+                  </span>
+                  <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-control" 
+                    placeholder="Create a password" 
+                    [(ngModel)]="password" 
+                    #passwordInput="ngModel"
+                    required 
+                    minlength="8"
+                    [class.is-invalid]="passwordInput.invalid && passwordInput.touched"
+                    autocomplete="new-password"
+                  >
+                  <div *ngIf="passwordInput.invalid && passwordInput.touched" class="invalid-feedback">
+                    <div *ngIf="passwordInput.errors?.['required']">Password is required</div>
+                    <div *ngIf="passwordInput.errors?.['minlength']">Password must be at least 8 characters</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label for="confirmpassword" class="form-label">Confirm Password</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-lock-fill"></i>
+                  </span>
+                  <input 
+                    type="password" 
+                    id="confirmpassword" 
+                    name="confirmpassword" 
+                    class="form-control" 
+                    placeholder="Confirm your password" 
+                    [(ngModel)]="confirmPassword" 
+                    #confirmPasswordInput="ngModel"
+                    required 
+                    [class.is-invalid]="(confirmPasswordInput.invalid || password !== confirmPassword) && confirmPasswordInput.touched"
+                    autocomplete="new-password"
+                  >
+                  <div *ngIf="(confirmPasswordInput.invalid || password !== confirmPassword) && confirmPasswordInput.touched" class="invalid-feedback">
+                    <div *ngIf="confirmPasswordInput.errors?.['required']">Please confirm your password</div>
+                    <div *ngIf="password !== confirmPassword && confirmPasswordInput.touched">Passwords do not match</div>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                class="btn btn-primary btn-lg w-100 mb-3" 
+                type="submit"
+                [disabled]="registrationForm.invalid || password !== confirmPassword || isLoading"
+              >
+                <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <i *ngIf="!isLoading" class="bi bi-person-plus me-2"></i>
+                {{ isLoading ? 'Creating Account...' : 'Create Account' }}
+              </button>
+            </form>
+
+            <hr class="my-4">
+
+            <div class="text-center">
+              <p class="mb-0">
+                Already have an account? 
+                <a routerLink="/login" class="text-decoration-none fw-semibold">
+                  Sign in here
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>

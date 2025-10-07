@@ -1,74 +1,68 @@
+<div *ngIf="successMessage" class="alert alert-success">{{successMessage}}</div>
+
 <div class="posts-container">
     <div class="post">
-      <div class="post-head">
-        <h4 class="post-author">{{currentPost.author_name}}</h4>
-        <h5 class="post-date">{{currentPost.created_at}}</h5>
-      </div>
-
-      <div class="post-content">
-        <h3 class="post-title">{{currentPost.title}}</h3>
-        <p class="cart-text">{{currentPost.content}}</p>
-      </div>
-
-      <div class="post-stats">
-        <!-- like button -->
-        <a (click)="toggleLike()">
-          <i class="bi fs-4" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
-        </a>
-        &nbsp;
-        <span class="counter cart-logo">{{currentPost.likes}}</span>
-  
-        <!-- comment button -->
-        <a (click)="showComments()">
-          <i class="bi bi-chat fs-4 cart-logo"></i>
-        </a>
-  
-        <!-- delete button -->
-        <a (click)="deletePost(currentPost)">
-          <i class="bi bi-trash-fill fs-4 cart-logo"></i>
-        </a>
-        
-        <!-- community label -->
-        <a [routerLink]="['/community', currentPost.label]">
-          <h3 class="post-label"> #{{currentPost.label}}</h3>
-        </a>
-      </div>
-    </div>
-  </div>
-  
-  
-    <!-- COMMENT SECTION -->
-  <div class="comment-container">
-    <div *ngIf="seeComments" class="comment-section">
-      <!-- list of comments -->
-      <div class="post-comment">
-        <!-- <ul>
-          <li *ngFor="let comment of comments"> -->
-            <div class="list" *ngFor="let comment of comments">
-              <div class="user">
-                <div class="user-img">
-                  <img src="../../../assets/img/account-icon.png" alt="">
-                </div>
-                <div class="user-meta">
-                  <div class="name">{{ comment.author_name }}</div>
-                  <!-- <div class="day">{{ comment.created_at }}</div> -->
-                </div>
-              </div>
-              <div class="comment-post">{{ comment.body }}</div>
+        <div class="post-author-info">
+            <img src="../../../assets/img/account-icon.png" alt="Author Avatar" class="author-avatar">
+            <div>
+                <div class="post-author">{{currentPost.author_name}}</div>
+                <div class="post-date">{{currentPost.created_at | date:'medium'}}</div>
             </div>
-          <!-- </li>
-        </ul> -->
-      </div>
-  
-      <!-- comment box -->
-      <div class="comment-box">
-        <form (ngSubmit)="submitComment()" method="post">
-          <!-- <textarea name="comment" id="" cols="30" rows="10" placeholder="Write a comment..."></textarea> -->
-          <input id="body" name="body" [(ngModel)]="newComment.body" class="comment-input" type="text" placeholder="Write a comment...">
-          <button class="submit-comment btn btn-success btn-block" type="submit"> 
-            <i class="bi bi-send"></i>
-          </button>
-        </form>
-      </div>
+        </div>
+
+        <div class="post-content">
+            <h3 class="post-title">{{currentPost.title}}</h3>
+            <div [innerHTML]="isExpanded ? currentPost.content : (currentPost.content | slice:0:200) + '...'" class="cart-text"></div>
+            <a *ngIf="currentPost.content.length > 200" (click)="toggleReadMore()" class="read-more">
+                {{ isExpanded ? 'Read Less' : 'Read More' }}
+            </a>
+        </div>
+
+        <div class="post-footer">
+            <a [routerLink]="['/community', currentPost.label]" class="post-label">
+                #{{currentPost.label}}
+            </a>
+            <div class="post-stats">
+                <a (click)="toggleLike()">
+                    <i class="bi fs-4" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
+                    <span class="counter">{{currentPost.likes}}</span>
+                </a>
+                <a (click)="showComments()">
+                    <i class="bi bi-chat fs-4"></i>
+                    <span class="counter">{{comments.length}}</span>
+                </a>
+                <a (click)="deletePost(currentPost)" *ngIf="isOwnPost()">
+                    <i class="bi bi-trash-fill fs-4"></i>
+                </a>
+            </div>
+        </div>
     </div>
-  </div>
+</div>
+
+<div class="comment-container">
+    <div *ngIf="seeComments" class="comment-section">
+        <div class="comment-box">
+            <form (ngSubmit)="submitComment()" method="post">
+                <textarea [(ngModel)]="newComment.body" name="body" class="comment-input" placeholder="Write a comment..."></textarea>
+                <button class="btn btn-success submit-comment" type="submit">
+                    <i class="bi bi-send"></i>
+                </button>
+            </form>
+        </div>
+
+        <div class="post-comment">
+            <div class="list" *ngFor="let comment of comments">
+                <div class="user">
+                    <div class="user-img">
+                        <img src="../../../assets/img/account-icon.png" alt="User Avatar">
+                    </div>
+                    <div class="user-meta">
+                        <div class="name">{{ comment.author_name }}</div>
+                        <div class="day">{{ comment.created_at | date:'short' }}</div>
+                    </div>
+                </div>
+                <div class="comment-post">{{ comment.body }}</div>
+            </div>
+        </div>
+    </div>
+</div>

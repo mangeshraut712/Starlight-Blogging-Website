@@ -5,16 +5,21 @@ import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
 import { User } from '../models/user';
+import { environment } from '../../environments/environment';
 
 const httpOptions = {
-  headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+  headers: new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Accept':'application/json'
+  }),
+  withCredentials: true
 };
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-   private BASE_URL: string = 'http://localhost:8080';
+   private BASE_URL: string = environment.apiUrl || 'http://localhost:8080';
   private apiUrl = 'http://localhost:5000/api/users';
   private updateUrl = 'http://localhost:5000/api/update-profile';
   

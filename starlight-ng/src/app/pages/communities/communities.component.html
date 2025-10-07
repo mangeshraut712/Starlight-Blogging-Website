@@ -1,0 +1,13 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-4" *ngFor="let community of communityList">
+      <div class="card community-card">
+        <div class="card-body">
+          <h5 class="card-title">{{ community }}</h5>
+          <p class="card-text">A place to discuss all things related to {{ community }}.</p>
+          <a [routerLink]="['/community', community]" class="btn btn-primary">Go to Community</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

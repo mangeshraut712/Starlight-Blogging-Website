@@ -6,7 +6,8 @@ import flask
 # from flask_session import Session
 from flask import Flask, flash, g, jsonify, redirect, render_template, request, session
 from flask_cors import CORS, cross_origin
-from flask_login import current_user, login_required, login_user, logout_user
+from flask_login import current_user, login_required, login_user, logout_user, LoginManager
+from flask_session import Session
 from models import db, login, UserModel, PostModel, Like, Comment
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token
@@ -18,15 +19,18 @@ app.config['SECRET_KEY'] = 'xyz##s3crwtK*'
 app.config['JWT_SECRET_KEY'] = 's3cr3!#&7-21jhF'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///starlight.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# UID=None
+
 
 app.config['SESSION_TYPE'] = 'filesystem'
 # app.config['SESSION_FILE_DIR'] = os.path.abspath('/Users/edmondmbadu/repo/starlight/starlight-backend/')
 # /Users/edmondmbadu/repo/starlight/starlight-backend
 app.permanent_session_lifetime = datetime.timedelta(minutes=30)
-# Session(app)
-CORS(app, supports_credentials=True)
-# CORS(app, resources={r"/api/*": {"origins": "http://localhost:4200"}})
+Session(app)
+CORS(app,
+     supports_credentials=True,
+     origins=["http://localhost:4200", "http://localhost:56230"],
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 db.init_app(app)
 migrate = Migrate(app, db, render_as_batch=True)
@@ -34,9 +38,8 @@ jwt = JWTManager(app)
 login.init_app(app)
 # login.login_view = 'login'
 
-
-@app.before_first_request
-def create_table():
+# Create tables within app context
+with app.app_context():
     db.create_all()
 
 def get_current_user_id():
@@ -54,7 +57,7 @@ def get_current_user():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = get_data()
-    email = data['email']
+    email = data['email'].lower().strip()
     password = data['password']
     user = UserModel.query.filter_by(email=email).first()
     if user and user.check_password(password):
@@ -64,8 +67,6 @@ def login():
         # print("user is auth?", current_user.get_id())
 
         access_token = create_access_token(identity=email)
-        global UID
-        UID= user.id
         uid = str(user.id)
         print("the session id is and user id are : ", uid, user.id)
         return jsonify({'user': user.id, 'uid':uid, 'message': 'Login is successfull', 'token': access_token}), 200
@@ -76,7 +77,7 @@ def login():
 @app.route('/api/register', methods=['POST'])
 def register():
     data = get_data()
-    email = data['email']
+    email = data['email'].lower().strip()
     password = data['password']
     first = data['first']
     last = data['last']
@@ -104,14 +105,13 @@ def data():
 def logout():
     print("the user id", session.get('user_id'))
     session.pop('user_id', None)
-    UID = None
     return jsonify({'message': 'Logged out successfully'}), 200
 
 
 @app.route('/api/forgot_password', methods=['POST'])
 def forgot_password():
     data = get_data()
-    email = data['email']
+    email = data['email'].lower().strip()
     if email is None:
         return jsonify({'error': 'Email is required'}), 400
     
@@ -156,7 +156,10 @@ def get_current_user_info():
 
 @app.route('/api/update-profile', methods=['PUT'])
 def update_profile():
-    user = UserModel.query.filter_by(id=UID).first()
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
+    user = UserModel.query.filter_by(id=user_id).first()
     if user is None:
         return jsonify({'error': 'User not found'}), 404
     
@@ -202,23 +205,44 @@ def get_user_by_id(id):
 @app.route('/api/new-post', methods=['POST'])
 def create_new_post():
     data = get_data()
-    print("UID from new post", UID)
-    user = UserModel.query.filter_by(id=UID).first()
-    # print("current user auth... from new post?", current_user.is_authenticated)
+    print(f"=== DEBUG: NEW POST REQUEST ===")
+    print(f"DEBUG: Received headers: {dict(request.headers)}")
+    print(f"DEBUG: Received data: {data}")
+    print(f"DEBUG: All session data: {dict(session)}")
+    print(f"DEBUG: Session ID: {session.get('_id', 'None')}")
+
+    user_id = get_current_user_id()
+    print(f"DEBUG: user_id from get_current_user_id(): {user_id}")
+
+    if not user_id:
+        print("DEBUG: No user ID found in session, returning 401")
+        return jsonify({'error': 'Not authorized - Please login first'}), 401
+
+    user = UserModel.query.filter_by(id=user_id).first()
+    print(f"DEBUG: Found user: {user}")
+
     if user:
         author_id = user.id
         author_name = user.get_full_name()
-        title = data['title']
-        content = data['content']
+        title = data.get('title')
+        content = data.get('content')
         likes = 0
-        label = data['label']
-        
+        label = data.get('label')
+
+        print(f"DEBUG: Creating post - title: {title}, label: {label}")
+
         new_post = PostModel(author_id=author_id, author_name=author_name, title=title, content=content, likes=likes, label=label)
         db.session.add(new_post)
-        db.session.commit()
-        
-        return jsonify({'message': 'Post was added successfully', 'post': new_post.serialize()}), 200
+        try:
+            db.session.commit()
+            print(f"DEBUG: Post created successfully with ID: {new_post.id}")
+            return jsonify({'message': 'Post was added successfully', 'post': new_post.serialize()}), 200
+        except Exception as e:
+            db.session.rollback()
+            print(f"DEBUG: Failed to commit post: {e}")
+            return jsonify({'error': 'Failed to save post to database'}), 500
     else:
+        print("DEBUG: User not found in database")
         return jsonify({'error': 'User does not exist to create new post'}), 404
         
             
@@ -237,15 +261,14 @@ def get_all_posts():
 
 @app.route('/api/user-posts', methods=['GET'])
 def get_user_posts():
-    user_id = UID
-    if user_id:
-        posts = PostModel.query.filter_by(author_id=user_id)
-        post_list = [post.serialize() for post in posts]
-            
-        sorted_posts = sorted(post_list, key=lambda x: x['created_at'], reverse=True)
-        return jsonify(sorted_posts)
-    else:
-        return jsonify({'error':'User not found to display their posts'})
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
+    posts = PostModel.query.filter_by(author_id=user_id)
+    post_list = [post.serialize() for post in posts]
+
+    sorted_posts = sorted(post_list, key=lambda x: x['created_at'], reverse=True)
+    return jsonify(sorted_posts)
 
 
 @app.route('/api/posts/<int:post_id>', methods=['GET'])
@@ -260,7 +283,9 @@ def get_post_by_id(post_id):
 #liking a post
 @app.route('/api/posts/<int:post_id>/like', methods=['POST'])
 def like_post(post_id):
-    user_id = UID
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
     like = Like.query.filter_by(post_id=post_id, user_id=user_id).first()
     
     if like:
@@ -305,7 +330,10 @@ def comments(post_id):
     
     elif request.method == 'POST':
         data = get_data()
-        user = UserModel.query.filter_by(id=UID).first()
+        user_id = get_current_user_id()
+        if not user_id:
+            return jsonify({'error': 'Not authorized'}), 401
+        user = UserModel.query.filter_by(id=user_id).first()
         if user:
             author_id = user.id
             author_name = user.get_full_name()

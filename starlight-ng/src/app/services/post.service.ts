@@ -5,16 +5,22 @@ import { Observable, of } from 'rxjs';
 import { Post } from '../models/post';
 import { Like } from '../models/like';
 import { Comment } from '../models/comment';
+import { environment } from '../../environments/environment';
+
+const httpOptions = {
+  headers: new HttpHeaders({
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }),
+  withCredentials: true
+};
 
 @Injectable({
   providedIn: 'root'
 })
 export class PostService {
-   private BASE_URL: string = 'http://localhost:8080';
-  private postsApiUrl = 'http://localhost:5000/api/posts';
-  private newpostUrl = 'http://localhost:5000/api/new-post';
-  private deletePostUrl = 'http://localhost:5000/api/delete-post';
-  
+   private BASE_URL: string = environment.apiUrl || 'http://localhost:8080';
+
   constructor(private http: HttpClient) { }
 
   getAllPosts(): Observable<Post[]> {
@@ -37,7 +43,7 @@ export class PostService {
 
   // makeNewPost(title:string, content:string, label:string, likes:number, author_id:number): Observable<Post> {
   addPost(post:Post): Observable<Post> {
-    return this.http.post<Post>(`${this.BASE_URL}/api/new-post`, post);
+    return this.http.post<Post>(`${this.BASE_URL}/api/new-post`, post, httpOptions);
     // return this.http.post<Post>(this.newpostUrl, post);
     // return this.http.post<Post>(this.newpostUrl, {title, content, label, likes, author_id});
   }

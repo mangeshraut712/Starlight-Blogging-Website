@@ -10,6 +10,7 @@ import { HomepagePostsComponent } from './pages/homepage-posts/homepage-posts.co
 import { NewPostComponent } from './pages/new-post/new-post.component';
 import { UpdateProfileComponent } from './pages/update-profile/update-profile.component';
 import { CommunityLabelComponent } from './pages/community-label/community-label.component';
+import { CommunitiesComponent } from './pages/communities/communities.component';
 
 import { AuthGuard } from './services/auth.guard';
 

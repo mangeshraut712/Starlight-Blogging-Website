@@ -1,2 +1,11 @@
-<app-navbar icon="true" path="/homepage-posts" title="{{label | uppercase}} COMMUNITY"></app-navbar>
-<app-post-cart [currentPost]="cpost"  *ngFor="let cpost of posts"></app-post-cart>
+<div *ngIf="isLoading" class="loading-indicator">
+  <p>Loading posts...</p>
+</div>
+
+<div *ngIf="!isLoading && (!posts || posts.length === 0)" class="no-posts">
+  <p>No posts in this community yet. Be the first to create one!</p>
+</div>
+
+<div *ngIf="!isLoading && posts && posts.length > 0">
+  <app-post-cart [currentPost]="cpost"  *ngFor="let cpost of posts"></app-post-cart>
+</div>

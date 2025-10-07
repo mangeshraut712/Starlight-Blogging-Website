@@ -1,33 +1,119 @@
-<app-navbar icon="true" path="/homepage-posts" title="NEW POST"></app-navbar>
+<main class="new-post-page">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card new-post-card">
+          <div class="card-header">
+            <h2 class="card-title mb-0">
+              <i class="bi bi-pencil-square me-2"></i>
+              Create New Post
+            </h2>
+            <p class="text-muted mb-0">Share your thoughts with the Starlight community</p>
+          </div>
+          
+          <div class="card-body">
+            <form (ngSubmit)="createNewPost()" #postForm="ngForm" novalidate>
+              <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {{ errorMessage }}
+              </div>
 
-<div class="container">
-  <form (ngSubmit)="createNewPost()" action="">
-    <div class="error-message">{{ errorMessage }}</div> <br>
-    <div class="row">
-      <div class="col-md-6">
-        <input id="input-title" type="text" [(ngModel)]="newPost.title" name="title" placeholder="TITLE"> 
-      </div>
+              <div class="mb-4">
+                <label for="input-title" class="form-label">
+                  <i class="bi bi-type me-1"></i>Post Title
+                </label>
+                <input 
+                  id="input-title" 
+                  type="text" 
+                  [(ngModel)]="newPost.title" 
+                  name="title" 
+                  class="form-control" 
+                  placeholder="Enter an engaging title for your post"
+                  #titleInput="ngModel"
+                  required
+                  minlength="5"
+                  maxlength="200"
+                  [class.is-invalid]="titleInput.invalid && titleInput.touched"
+                >
+                <div *ngIf="titleInput.invalid && titleInput.touched" class="invalid-feedback">
+                  <div *ngIf="titleInput.errors?.['required']">Title is required</div>
+                  <div *ngIf="titleInput.errors?.['minlength']">Title must be at least 5 characters</div>
+                  <div *ngIf="titleInput.errors?.['maxlength']">Title must be less than 200 characters</div>
+                </div>
+                <div class="form-text">
+                  <small class="text-muted">{{ newPost.title?.length || 0 }}/200 characters</small>
+                </div>
+              </div>
 
-      <div class="col-md-4">
-        <div class="form-group">
-          <p class="label">Please select a label</p>
-          <select  [(ngModel)]="newPost.label" name="label" class="form-control">
-            <!-- <option value="" >Please select a label</option> -->
-            <option *ngFor="let c of communityList">{{c}}</option>
-          </select>
+              <div class="mb-4">
+                <label for="label-select" class="form-label">
+                  <i class="bi bi-tags me-1"></i>Community
+                </label>
+                <select 
+                  id="label-select" 
+                  [(ngModel)]="newPost.label" 
+                  name="label" 
+                  class="form-select"
+                  #labelInput="ngModel"
+                  required
+                  [class.is-invalid]="labelInput.invalid && labelInput.touched"
+                >
+                  <option value="" disabled>Choose a community for your post</option>
+                  <option *ngFor="let c of communityList" [value]="c">{{ c }}</option>
+                </select>
+                <div *ngIf="labelInput.invalid && labelInput.touched" class="invalid-feedback">
+                  <div *ngIf="labelInput.errors?.['required']">Please select a community</div>
+                </div>
+                <div class="form-text">
+                  <small class="text-muted">Select the most relevant community for your post</small>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label">
+                  <i class="bi bi-file-text me-1"></i>Content
+                </label>
+                <div class="editor-container">
+                  <editor 
+                    outputFormat="html" 
+                    [(ngModel)]="newPost.content" 
+                    name="content" 
+                    [init]="editorConfig"
+                    #contentInput="ngModel"
+                    required
+                    [class.is-invalid]="contentInput.invalid && contentInput.touched"
+                  ></editor>
+                </div>
+                <div *ngIf="contentInput.invalid && contentInput.touched" class="invalid-feedback">
+                  <div *ngIf="contentInput.errors?.['required']">Content is required</div>
+                </div>
+                <div class="form-text">
+                  <small class="text-muted">Use the toolbar to format your text, add links, images, and more</small>
+                </div>
+              </div>
+
+              <div class="d-flex gap-3 justify-content-end">
+                <button 
+                  class="btn btn-outline-secondary btn-lg" 
+                  type="button" 
+                  (click)="cancelNewPost($event)"
+                >
+                  <i class="bi bi-x-circle me-2"></i>Cancel
+                </button>
+                <button 
+                  class="btn btn-primary btn-lg" 
+                  type="submit"
+                  [disabled]="postForm.invalid || isLoading"
+                >
+                  <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <i *ngIf="!isLoading" class="bi bi-send me-2"></i>
+                  {{ isLoading ? 'Publishing...' : 'Publish Post' }}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="row mt-3 mb-5">
-      <div class="col-md-10">
-        <editor outputFormat="text" [(ngModel)]="newPost.content" name="content" [init]="{ plugins: 'lists link image table code help wordcount' }"></editor>
-      </div>
-
-      <div class="col-md-10 text-center mb-5">
-        <button class="btn btn-lg btn-success btn-block btn-signin" type="submit" (click)="cancelNewPost($event)">Cancel</button>
-        <button class="btn btn-lg btn-success btn-block btn-signin" type="submit">Submit</button>
-      </div>
-    </div>
-  </form>
-</div>
+  </div>
+</main>

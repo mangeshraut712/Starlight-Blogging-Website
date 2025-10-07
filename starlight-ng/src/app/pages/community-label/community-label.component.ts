@@ -13,6 +13,8 @@ export class CommunityLabelComponent {
   label: string;
   posts: Post[];
 
+  isLoading = false;
+
   constructor(
     private route: ActivatedRoute, 
     private postService:PostService,
@@ -24,24 +26,19 @@ export class CommunityLabelComponent {
       this.label = params['label'];
       this.fetchPosts();
     });
-
-    this.postService.getPostsByLabel(this.label).subscribe(
-      (response: Post[]) => {
-        this.posts = response.map(post => ({
-          ...post,
-          created_at: this.datePipe.transform(post.created_at, 'MM/dd/yyyy')
-        }));
-      },
-      (error) => {
-        console.log("error retrieving posts: ", error);
-      }
-    )
   }
 
   fetchPosts() {
-    // fetch posts with the current label from the backend API
+    this.isLoading = true;
     this.postService.getPostsByLabel(this.label).subscribe(
-      posts => {this.posts = posts;}
+      posts => {
+        this.posts = posts;
+        this.isLoading = false;
+      },
+      error => {
+        console.log("error retrieving posts: ", error);
+        this.isLoading = false;
+      }
     );
   }
 
