@@ -20,12 +20,16 @@ const routes: Routes = [
     component: HomepageComponent,
   },
   {
+    path: 'login',
+    component: LoginComponent,
+  },
+  {
     path: 'registration',
     component: RegistrationComponent,
   },
   {
-    path: 'login',
-    component: LoginComponent,
+    path: 'homepage',
+    component: HomepageComponent,
   },
   {
     path: 'recovery',

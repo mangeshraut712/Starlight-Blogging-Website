@@ -1,67 +1,149 @@
  
 
-<!-- Hero Showcase Section -->
-<section class="bg-light">
+<!-- HERO SECTION - Starlight Community Landing -->
+<section class="hero-section">
+    <div class="hero-overlay"></div>
     <div class="container-fluid">
-        <div class="row align-items-center g-5">
-            <div class="col-lg-6 col-md-12">
+        <div class="row align-items-center min-vh-100">
+            <!-- Left Content -->
+            <div class="col-xl-7 col-lg-8 col-md-12 hero-content-wrapper">
                 <div class="hero-content">
-                    <h1>Write <span class="text-warning">Your Stories</span></h1>
-                    <p class="lead">
-                        Share your writing with the universe and let each post become one of its stars.
-                        Explore the power of writing with everyone, everywhere. Join our cosmic community
-                        where stories come alive under the stars.
+                    <h1 class="hero-title">
+                        Share Your Writing with the <span class="text-gradient">Universe</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Let each post become one of its stars. Explore the power of writing with everyone, everywhere.
+                        Join our cosmic community where stories come alive under the stars.
                     </p>
-                    <button class="btn btn-success btn-lg" (click)="register($event)">
-                        <i class="bi bi-rocket-takeoff me-2"></i>Get Started
-                    </button>
+
+                    <!-- Call to Action -->
+                    <div class="cta-section mt-5">
+                        <button class="cta-button" (click)="register($event)">
+                            <i class="bi bi-rocket-takeoff me-2"></i>
+                            Start Writing Today
+                        </button>
+                        <div class="cta-subtext mt-3">
+                            🚀 Join 1000+ writers sharing their cosmic stories
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-12 d-flex justify-content-center">
-                <div class="hero-image-container">
-                    <img class="img-fluid" src="assets/img/steff.jpeg" alt="Storytelling Inspiration">
+
+            <!-- Right Content -->
+            <div class="col-xl-5 col-lg-4 col-md-12 hero-visual-wrapper">
+                <div class="hero-visual">
+                    <div class="floating-elements">
+                        <div class="element element-1">✨</div>
+                        <div class="element element-2">🌟</div>
+                        <div class="element element-3">📖</div>
+                        <div class="element element-4">☄️</div>
+                    </div>
+                    <img class="hero-image" src="assets/img/steff.jpeg" alt="Writer Inspiration">
+                    <div class="image-glow"></div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- About Us Section -->
-<section id="about">
+<!-- ABOUT STARLIGHT SECTION -->
+<section class="about-section">
     <div class="container-fluid">
         <div class="row align-items-center g-5">
+            <!-- Left Content -->
             <div class="col-lg-6 col-md-12">
-                <div class="content-side">
-                    <h1>About StarLight</h1>
-                    <p>
-                        This journey began as a creative class project. Initially, we explored building simulations,
-                        but our creative vision evolved when our friend Steff revealed their passionate world of writing.
-                        That's when we chose to build something magical - a space dedicated to storytelling.
+                <div class="about-content">
+                    <div class="section-badge mb-4">✨ About StarLight</div>
+
+                    <h2 class="about-title mb-4">
+                        A Cosmic Space for <span class="highlight-text">Storytellers</span>
+                    </h2>
+
+                    <p class="about-description mb-4">
+                        Our journey began as a creative class project exploring digital spaces, but we discovered something truly magical.
+                        Our friend Steff opened our eyes to the transformative power of storytelling, inspiring us to create a universe
+                        where every voice can shine like a star.
                     </p>
-                    <p>
-                        We believe in the cosmic power of storytelling and the strength of shared experiences.
-                        Our platform serves as both observatory and launchpad for imagination. Here, every writer
-                        can connect, collaborate, and be inspired by fellow cosmic creators.
+
+                    <p class="about-description mb-4">
+                        <strong>StarLight</strong> is more than a platform—it's a constellation of creative minds connecting through the cosmic art of writing.
+                        Whether you're a seasoned author, an emerging voice, or simply moved by the power of words, you belong here.
                     </p>
-                    <div class="quote-container">
-                        <blockquote class="blockquote">
-                            <p class="mb-2">✨ "Every story is a star waiting to shine in the vast universe of human connection."</p>
-                            <footer class="blockquote-footer">StarLight Community</footer>
-                        </blockquote>
+
+                    <!-- Key Features -->
+                    <div class="features-grid mb-5">
+                        <div class="feature-item">
+                            <div class="feature-icon">💫</div>
+                            <div>
+                                <strong>Cosmic Community</strong>
+                                <p>Connect with writers from around the world</p>
+                            </div>
+                        </div>
+
+                        <div class="feature-item">
+                            <div class="feature-icon">📝</div>
+                            <div>
+                                <strong>Creative Freedom</strong>
+                                <p>Share in any community that sparks your creativity</p>
+                            </div>
+                        </div>
+
+                        <div class="feature-item">
+                            <div class="feature-icon">🌟</div>
+                            <div>
+                                <strong>Discovery</strong>
+                                <p>Find inspiration in stories that touch your soul</p>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Quote -->
+                    <blockquote class="cosmic-quote">
+                        <p class="quote-text">
+                            "Every story is a star waiting to shine in the vast universe of human connection."
+                        </p>
+                        <footer class="quote-author">
+                            <cite>— StarLight Community</cite>
+                        </footer>
+                    </blockquote>
                 </div>
             </div>
+
+            <!-- Right Content -->
             <div class="col-lg-6 col-md-12">
-                <div class="video-side">
-                    <iframe
-                        class="main-vid"
-                        src="https://www.youtube.com/embed/vyVpRiqOvt4"
-                        title="StarLight - Writing the Future"
-                        allowfullscreen
-                        loading="lazy">
-                    </iframe>
-                    <div class="text-white text-center mt-3">
-                        <small class="d-block">🌟 Watch our story in motion 🌟</small>
+                <div class="media-content">
+                    <div class="video-wrapper">
+                        <iframe
+                            class="about-video"
+                            src="https://www.youtube.com/embed/vyVpRiqOvt4"
+                            title="StarLight - Writing the Future"
+                            allowfullscreen
+                            loading="lazy">
+                        </iframe>
+
+                        <div class="video-glow"></div>
+                    </div>
+
+                    <div class="video-caption text-center">
+                        <small class="caption-text">🌟 Watch our story unfold in motion 🌟</small>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="platform-stats mt-4">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-number">1000+</div>
+                                <div class="stat-label">Active Writers</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">50+</div>
+                                <div class="stat-label">Communities</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">∞</div>
+                                <div class="stat-label">Stories Shared</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
