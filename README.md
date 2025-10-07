@@ -46,21 +46,17 @@ A **premium, modern blogging platform** inspired by Medium and Hashnode, where w
 ## 📱 **Screenshots & Live Demo**
 
 <p align="center">
-  <img src="https://via.placeholder.com/800x400/667eea/ffffff?text=StarLight+Hompage" alt="StarLight Homepage" width="70%">
+  <img width="1512" height="858" alt="Screenshot 2025-10-07 at 3 11 08 PM" src="https://github.com/user-attachments/assets/8bd3621d-7115-4963-94d0-932e5ea1ec2d" />
+>
   <br>
   <em>Homepage - Cosmic landing experience with gradient backgrounds</em>
 </p>
 
 <p align="center">
-  <img src="https://via.placeholder.com/800x400/764ba2/ffffff?text=Dashboard+View" alt="Dashboard Interface" width="70%">
+  <img width="1512" height="853" alt="Screenshot 2025-10-07 at 3 11 40 PM" src="https://github.com/user-attachments/assets/9892d4d5-d900-4902-9c01-2ca53ed46c40" />
+>
   <br>
   <em>Dashboard - Modern feed with glassmorphism cards and animations</em>
-</p>
-
-<p align="center">
-  <img src="https://via.placeholder.com/800x400/667eea/ffffff?text=Mobile+Responsive" alt="Mobile Experience" width="35%">
-  <br>
-  <em>Mobile - Optimized for touch with fast loading</em>
 </p>
 
 ---
