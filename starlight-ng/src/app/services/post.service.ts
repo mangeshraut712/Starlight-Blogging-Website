@@ -50,7 +50,11 @@ export class PostService {
 
   deletePost(postId:number): Observable<Post>{
     const url = `${this.BASE_URL}/api/delete-post/${postId}`;
-    return this.http.delete<Post>(url);
+    return this.http.delete<Post>(url, httpOptions);
+  }
+
+  updatePost(postId: number, postData: {title: string, content: string}): Observable<Post> {
+    return this.http.put<Post>(`${this.BASE_URL}/api/update-post/${postId}`, postData, httpOptions);
   }
 
   likePost(postId:number) {

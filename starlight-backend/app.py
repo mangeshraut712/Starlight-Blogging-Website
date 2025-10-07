@@ -370,11 +370,48 @@ def comments(post_id):
 @app.route('/api/delete-post/<int:post_id>', methods=["DELETE"])
 @cross_origin(supports_credentials=True)
 def delete_post(post_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
+
     post = PostModel.query.filter_by(id=post_id).first()
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+
+    if post.author_id != user_id:
+        return jsonify({'error': 'Not authorized to delete this post'}), 403
+
     db.session.delete(post)
     db.session.commit()
 
     return jsonify("Post was deleted"), 200
+
+#update post
+@app.route('/api/update-post/<int:post_id>', methods=['PUT'])
+def update_post(post_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
+
+    data = get_data()
+    new_title = data.get('title', '').strip()
+    new_content = data.get('content', '').strip()
+
+    if not new_title or not new_content:
+        return jsonify({'error': 'Title and content cannot be empty'}), 400
+
+    post = PostModel.query.filter_by(id=post_id).first()
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+
+    if post.author_id != user_id:
+        return jsonify({'error': 'Not authorized to edit this post'}), 403
+
+    post.title = new_title
+    post.content = new_content
+    db.session.commit()
+
+    return jsonify(post.serialize()), 200
 
 #delete comment
 @app.route('/api/delete-comment/<int:comment_id>', methods=["DELETE"])

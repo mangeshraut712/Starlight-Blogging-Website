@@ -118,6 +118,17 @@ export class PostCartComponent {
     return this.user && this.user.id === this.currentPost.author_id;
   }
 
+  editPost() {
+    if (!this.post) {
+      this.post = { ...this.currentPost };
+    } else {
+      Object.assign(this.post, this.currentPost);
+    }
+    // Switch to edit mode - this would be implemented with a dialog or inline editing
+    // For now, we'll navigate to edit page
+    this.router.navigate(['/edit-post', this.currentPost.id]);
+  }
+
   showComments(){
     this.seeComments=!this.seeComments;
   }
