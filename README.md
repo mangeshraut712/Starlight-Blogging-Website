@@ -456,3 +456,21 @@ copies of the Software...
 *"Where every story becomes a star, and every writer shines in the cosmic universe"* 🌟
 
 </div>
+
+---
+
+<!-- codex:project-diagram:start -->
+
+## Project Diagram
+
+```mermaid
+flowchart LR
+    A["Browser"] --> B["Frontend"]
+    B --> C["Backend / API"]
+    C --> D["Data / Services"]
+    B -. feedback .-> A
+```
+
+_Main application path from user interface through backend services._
+
+<!-- codex:project-diagram:end -->
