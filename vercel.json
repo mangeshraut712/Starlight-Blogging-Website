@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://starlight-api.onrender.com/api/$1"
+      "destination": "https://starlight-api-njt0.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
