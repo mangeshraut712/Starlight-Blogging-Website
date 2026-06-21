@@ -1,0 +1,20 @@
+{
+  "name": "StarLight - Share Your Stories",
+  "short_name": "StarLight",
+  "description": "A modern blogging platform to share your stories with the universe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/img/starlight-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "news", "writing"],
+  "lang": "en-US"
+}

@@ -20,14 +20,29 @@
         <i class="bi bi-people"></i>
         <span>Communities</span>
       </a>
+      <a routerLink="/search" routerLinkActive="active" class="nav-link">
+        <i class="bi bi-search"></i>
+        <span>Search</span>
+      </a>
       <a routerLink="/new-post" routerLinkActive="active" class="nav-link">
         <i class="bi bi-pencil-square"></i>
         <span>Write</span>
       </a>
     </nav>
 
+    <!-- Search Bar - Desktop -->
+    <form class="navbar-search desktop-search" *ngIf="isLoggedIn()" (ngSubmit)="submitSearch()">
+      <i class="bi bi-search"></i>
+      <input type="search" [(ngModel)]="searchQuery" name="searchQuery" placeholder="Search posts..." aria-label="Search posts">
+    </form>
+
     <!-- User Actions -->
     <div class="navbar-actions">
+      <!-- Theme Toggle -->
+      <button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="themeService.currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+        <i class="bi" [class.bi-moon-stars]="themeService.currentTheme === 'light'" [class.bi-sun]="themeService.currentTheme === 'dark'"></i>
+      </button>
+
       <!-- Logged In User -->
       <div *ngIf="isLoggedIn(); else guestActions" class="user-section">
         <!-- Quick Options -->
@@ -98,6 +113,10 @@
         <a routerLink="/communities" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
           <i class="bi bi-people"></i>
           <span>Communities</span>
+        </a>
+        <a routerLink="/search" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
+          <i class="bi bi-search"></i>
+          <span>Search</span>
         </a>
         <a routerLink="/my-posts" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
           <i class="bi bi-journal-text"></i>

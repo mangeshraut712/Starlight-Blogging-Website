@@ -2,33 +2,39 @@
 import os
 import datetime
 import flask
-# from flask.ext.session import Session
-# from flask_session import Session
-from flask import Flask, flash, g, jsonify, redirect, render_template, request, session
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
-from flask_login import current_user, login_required, login_user, logout_user, LoginManager
-from flask_session import Session
 from models import db, login, UserModel, PostModel, Like, Comment
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token
+from sqlalchemy import or_
+
+load_dotenv()
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-app = Flask(__name__) # name for the Flask app (refer to output)
-app.config['SECRET_KEY'] = 'xyz##s3crwtK*'
-app.config['JWT_SECRET_KEY'] = 's3cr3!#&7-21jhF'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///starlight.db'
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-secret-change-in-production')
+
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///starlight.db')
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+app.permanent_session_lifetime = datetime.timedelta(hours=24)
+is_production = os.environ.get('FLASK_ENV') == 'production'
+if is_production:
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-app.config['SESSION_TYPE'] = 'filesystem'
-# app.config['SESSION_FILE_DIR'] = os.path.abspath('/Users/edmondmbadu/repo/starlight/starlight-backend/')
-# /Users/edmondmbadu/repo/starlight/starlight-backend
-app.permanent_session_lifetime = datetime.timedelta(minutes=30)
-Session(app)
+allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*').split(',')
 CORS(app,
      supports_credentials=True,
-     origins=["*"],
+     origins=allowed_origins,
      allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
@@ -68,8 +74,53 @@ def root():
     return jsonify({
         'message': 'Starlight Blogging Backend API',
         'status': 'Running',
+        'version': '2.0.0',
         'timestamp': datetime.datetime.now().isoformat(),
-        'documentation': 'Available endpoints: /api/data, /api/login, /api/register, /api/posts, etc.'
+        'documentation': 'Available endpoints: /api/health, /api/login, /api/register, /api/posts, /api/search, etc.'
+    })
+
+
+@app.route('/api/health')
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.datetime.now().isoformat(),
+        'database': 'connected'
+    }), 200
+
+
+@app.route('/api/search', methods=['GET'])
+def search_posts():
+    query = request.args.get('q', '').strip()
+    label = request.args.get('label', '').strip()
+
+    if not query and not label:
+        return jsonify({'error': 'Search query or label filter required'}), 400
+
+    posts_query = PostModel.query
+
+    if label:
+        posts_query = posts_query.filter_by(label=label)
+
+    if query:
+        search_term = f'%{query}%'
+        posts_query = posts_query.filter(
+            or_(
+                PostModel.title.ilike(search_term),
+                PostModel.content.ilike(search_term),
+                PostModel.author_name.ilike(search_term),
+                PostModel.label.ilike(search_term)
+            )
+        )
+
+    posts = posts_query.all()
+    post_list = [post.serialize() for post in posts]
+    sorted_posts = sorted(post_list, key=lambda x: x['created_at'], reverse=True)
+    return jsonify({
+        'results': sorted_posts,
+        'count': len(sorted_posts),
+        'query': query,
+        'label': label
     })
 
 ################ AUTHENTICATION ROUTES ###############
@@ -458,6 +509,7 @@ def update_comment(comment_id):
     return jsonify(comment.serialize()), 200
 
 
-# running the server
 if __name__ == '__main__':
-    app.run(host='localhost', port=8080, debug=True) # to allow for debugging and auto-reload
+    port = int(os.environ.get('PORT', 8080))
+    debug = os.environ.get('FLASK_ENV', 'development') != 'production'
+    app.run(host='0.0.0.0', port=port, debug=debug)

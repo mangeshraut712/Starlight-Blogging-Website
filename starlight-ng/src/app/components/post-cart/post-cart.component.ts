@@ -233,4 +233,10 @@ export class PostCartComponent {
   isOwnComment(comment: Comment): boolean {
     return this.user && this.user.id === comment.author_id;
   }
+
+  getReadingTime(): number {
+    const text = (this.currentPost?.content || '').replace(/<[^>]*>/g, '');
+    const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+    return Math.max(1, Math.ceil(words / 200));
+  }
 }

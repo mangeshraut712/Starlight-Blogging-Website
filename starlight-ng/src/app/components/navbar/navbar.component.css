@@ -2,10 +2,10 @@
 
 /* Main Navbar Container */
 .starlight-navbar {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+  background: var(--navbar-bg);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
   z-index: 1050;
@@ -540,4 +540,67 @@
 
 .starlight-navbar {
   animation: slideDown 0.6s ease-out;
+}
+
+/* ================== SEARCH BAR ================== */
+.navbar-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 2rem;
+  padding: 0.4rem 1rem;
+  margin: 0 1rem;
+  flex: 0 1 280px;
+}
+
+.navbar-search i {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.navbar-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.navbar-search input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ================== THEME TOGGLE ================== */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 0.5rem;
+}
+
+.theme-toggle:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.theme-toggle i {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 991px) {
+  .desktop-search {
+    display: none;
+  }
 }

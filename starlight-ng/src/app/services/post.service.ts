@@ -84,4 +84,13 @@ export class PostService {
   updateComment(commentId: number, body: string) {
     return this.http.put(`${this.BASE_URL}/api/update-comment/${commentId}`, { body }, httpOptions);
   }
+
+  searchPosts(query: string, label?: string): Observable<{results: Post[], count: number, query: string, label: string}> {
+    let url = `${this.BASE_URL}/api/search?`;
+    const params: string[] = [];
+    if (query) params.push(`q=${encodeURIComponent(query)}`);
+    if (label) params.push(`label=${encodeURIComponent(label)}`);
+    url += params.join('&');
+    return this.http.get<{results: Post[], count: number, query: string, label: string}>(url);
+  }
 }

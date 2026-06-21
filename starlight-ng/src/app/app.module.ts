@@ -25,6 +25,8 @@ import { UpdateProfileComponent } from './pages/update-profile/update-profile.co
 import { PopUpComponent } from './components/pop-up/pop-up.component';
 import { CommunityLabelComponent } from './pages/community-label/community-label.component';
 import { CommunitiesComponent } from './pages/communities/communities.component';
+import { SearchComponent } from './pages/search/search.component';
+import { EditPostComponent } from './pages/edit-post/edit-post.component';
 
 // SERVICES
 import { AuthService } from './services/auth.service';
@@ -48,7 +50,9 @@ import { DataService } from './services/data.service';
     UpdateProfileComponent,
     PopUpComponent,
     CommunityLabelComponent,
-    CommunitiesComponent
+    CommunitiesComponent,
+    SearchComponent,
+    EditPostComponent
   ],
   imports: [
     BrowserModule,

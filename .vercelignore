@@ -1,0 +1,7 @@
+**/node_modules
+**/.git
+starlight-backend/**
+.github/**
+*.md
+cookies.txt
+starlight-ng/dist

@@ -1,0 +1,32 @@
+databases:
+  - name: starlight-db
+    plan: free
+    databaseName: starlight
+    user: starlight
+
+services:
+  - type: web
+    name: starlight-api
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: starlight-backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 app:app
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: https://starlight-blog.vercel.app,https://starlight-blog-f1y0zc8cj-mangesh-rauts-projects.vercel.app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: starlight-db
+          property: connectionString

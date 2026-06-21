@@ -6,7 +6,10 @@
             <img src="../../../assets/img/account-icon.png" alt="Author Avatar" class="author-avatar">
             <div>
                 <div class="post-author">{{currentPost.author_name}}</div>
-                <div class="post-date">{{currentPost.created_at | date:'medium'}}</div>
+                <div class="post-meta">
+                  <span class="post-date">{{currentPost.created_at | date:'medium'}}</span>
+                  <span class="reading-time"><i class="bi bi-clock"></i> {{ getReadingTime() }} min read</span>
+                </div>
             </div>
         </div>
 

@@ -87,6 +87,39 @@
     --z-modal: 1050;
     --z-popover: 1060;
     --z-tooltip: 1070;
+
+    /* Component tokens */
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --border-color: rgba(0, 0, 0, 0.08);
+    --input-bg: #ffffff;
+    --navbar-bg: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] {
+    --text-color: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-light: #64748b;
+    --text-dark: #f1f5f9;
+    --background-color: #0f172a;
+    --background-light: #1e293b;
+    --background-dark: #020617;
+    --white: #1e293b;
+    --gray-50: #1e293b;
+    --gray-100: #334155;
+    --gray-200: #475569;
+    --gray-300: #64748b;
+    --gray-400: #94a3b8;
+    --gray-500: #cbd5e1;
+    --gray-600: #e2e8f0;
+    --gray-700: #f1f5f9;
+    --gray-800: #f8fafc;
+    --gray-900: #ffffff;
+    --card-bg: rgba(30, 41, 59, 0.9);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --input-bg: #1e293b;
+    --navbar-bg: rgba(15, 23, 42, 0.95);
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+    --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
 }
 
 /* Reset and Base Styles */

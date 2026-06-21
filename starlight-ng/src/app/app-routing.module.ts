@@ -11,6 +11,8 @@ import { NewPostComponent } from './pages/new-post/new-post.component';
 import { UpdateProfileComponent } from './pages/update-profile/update-profile.component';
 import { CommunityLabelComponent } from './pages/community-label/community-label.component';
 import { CommunitiesComponent } from './pages/communities/communities.component';
+import { SearchComponent } from './pages/search/search.component';
+import { EditPostComponent } from './pages/edit-post/edit-post.component';
 
 import { AuthGuard } from './services/auth.guard';
 
@@ -53,6 +55,16 @@ const routes: Routes = [
   {
     path:'new-post',
     component: NewPostComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path:'edit-post/:id',
+    component: EditPostComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path:'search',
+    component: SearchComponent,
     canActivate: [AuthGuard]
   },
   {
