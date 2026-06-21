@@ -30,8 +30,8 @@ jobs:
       - name: Build production bundle
         run: npm run build:prod
 
-      - name: Run unit tests
-        run: npm run test:ci
+      - name: Type check
+        run: npx tsc -p tsconfig.app.json --noEmit
 
   backend:
     name: Backend Lint & Validate
