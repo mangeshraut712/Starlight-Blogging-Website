@@ -109,6 +109,7 @@ Frontend runs at **http://localhost:4200** and proxies `/api` to the backend via
 ```
 Starlight-Blogging-Website/
 ├── .github/workflows/          # CI (build, typecheck, backend tests)
+├── docs/                         # Project documentation
 ├── starlight-backend/          # Flask API
 │   ├── app.py                  # Routes, auth, rate limits
 │   ├── models.py               # User, Post, Comment, Like, Bookmark, Follow

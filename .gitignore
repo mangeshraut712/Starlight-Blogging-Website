@@ -1,14 +1,51 @@
+# OS
 .DS_Store
+Thumbs.db
+
+# Environment & secrets
 .env
-.env.local
-.venv/
+.env.*
+!.env.example
 starlight-backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+starlight-ng/dist/
+starlight-ng/.angular/
+
+# Local databases & sessions
+*.db
+instance/
+flask_session/
 starlight-backend/instance/
 starlight-backend/flask_session/
-starlight-backend/__pycache__/
-starlight-backend/.venv/
-starlight-backend/venv/
-starlight-ng/.angular/
-node_modules/
-dist/
+cookies.txt
+
+# IDE & tooling
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 .vercel
+.cursor/
+
+# Test / coverage
+coverage/
+.nyc_output/
+karma-coverage/
