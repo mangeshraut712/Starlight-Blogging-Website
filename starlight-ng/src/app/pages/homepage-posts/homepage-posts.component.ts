@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Post } from 'src/app/models/post';
 import { PostService } from 'src/app/services/post.service';
 import { AuthService } from 'src/app/services/auth.service';
@@ -9,7 +9,7 @@ import { ActivatedRoute } from '@angular/router';
   templateUrl: './homepage-posts.component.html',
   styleUrls: ['./homepage-posts.component.css']
 })
-export class HomepagePostsComponent {
+export class HomepagePostsComponent implements OnInit {
   posts: Post[] = [];
   isLoading = false;
   isLoadingMore = false;

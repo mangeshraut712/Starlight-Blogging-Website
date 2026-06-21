@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -17,6 +17,7 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private authService: AuthService,
     private formBuilder: FormBuilder
   ) {
@@ -29,7 +30,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     // Redirect if already logged in
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/homepage-posts']);
+      this.router.navigate(['/explore']);
     }
   }
 
@@ -54,10 +55,10 @@ export class LoginComponent implements OnInit {
       .subscribe({
         next: (response: any) => {
           this.isLoading = false;
-          if (response && response.token && response.uid) {
+          if (response?.uid) {
             this.authService.setUid(response.uid);
-            this.authService.setToken(response.token);
-            this.router.navigate(['/homepage-posts']);
+            const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/explore';
+            this.router.navigateByUrl(returnUrl);
           } else {
             this.errorMessage = 'Invalid response from server';
           }

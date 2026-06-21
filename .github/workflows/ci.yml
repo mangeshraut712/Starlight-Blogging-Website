@@ -51,10 +51,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m venv .venv
-          .venv/bin/pip install -r requirements.txt
+          .venv/bin/pip install -r requirements.txt pytest
 
       - name: Validate Flask app imports
         run: .venv/bin/python -c "from app import app; print('Flask app loaded successfully')"
+
+      - name: Run backend tests
+        run: .venv/bin/pytest tests/ -q
 
       - name: Check syntax
         run: .venv/bin/python -m py_compile app.py models.py

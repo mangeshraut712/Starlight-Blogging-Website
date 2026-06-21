@@ -37,6 +37,7 @@ export class AuthorProfileComponent implements OnInit {
     this.userService.getAuthor(this.username).subscribe({
       next: (author) => {
         this.author = author;
+        this.isFollowing = !!author.is_following;
         this.metaService.setPageMeta({
           title: `${author.first} ${author.last}`,
           description: author.bio || `Stories by ${author.first} ${author.last} on StarLight`

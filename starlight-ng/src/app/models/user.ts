@@ -9,4 +9,5 @@ export class User {
   password?: string;
   post_count?: number;
   follower_count?: number;
+  is_following?: boolean;
 }

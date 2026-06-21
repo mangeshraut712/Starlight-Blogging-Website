@@ -1,11 +1,14 @@
 .DS_Store
 .env
 .env.local
+.venv/
 starlight-backend/.env
 starlight-backend/instance/
 starlight-backend/flask_session/
 starlight-backend/__pycache__/
 starlight-backend/.venv/
+starlight-backend/venv/
+starlight-ng/.angular/
 node_modules/
 dist/
 .vercel

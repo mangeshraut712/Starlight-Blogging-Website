@@ -1,24 +1,31 @@
 # app.py
 import os
+import html
 import datetime
 import flask
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from models import db, login, UserModel, PostModel, Like, Comment, Bookmark, Follow
 from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager, create_access_token
-from sqlalchemy import or_, func, desc
+from sqlalchemy import or_, func, desc, text
 from utils import make_unique_slug, make_excerpt, make_username
 from schema_migrate import migrate_schema, backfill_data
+from sanitize import sanitize_html
 
 load_dotenv()
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+is_production = os.environ.get('FLASK_ENV') == 'production'
+
+if is_production and not os.environ.get('SECRET_KEY'):
+    raise RuntimeError('SECRET_KEY environment variable is required in production')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-secret-change-in-production')
 
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///starlight.db')
 if database_url.startswith('postgres://'):
@@ -27,7 +34,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.permanent_session_lifetime = datetime.timedelta(hours=24)
-is_production = os.environ.get('FLASK_ENV') == 'production'
 if is_production:
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -42,15 +48,16 @@ CORS(app,
 
 db.init_app(app)
 migrate = Migrate(app, db, render_as_batch=True)
-jwt = JWTManager(app)
+limiter = Limiter(get_remote_address, app=app, default_limits=[])
 login.init_app(app)
 # login.login_view = 'login'
 
 # Create tables within app context
 with app.app_context():
     db.create_all()
-    migrate_schema()
-    backfill_data()
+    if os.environ.get('RUN_SCHEMA_PATCH', 'true').lower() == 'true':
+        migrate_schema()
+        backfill_data()
 
 def published_posts_query():
     return PostModel.query.filter(
@@ -74,7 +81,7 @@ def get_current_user_id():
     return session.get('user_id')
 
 def get_data():
-    return request.get_json()
+    return request.get_json(silent=True) or {}
 
 def get_current_user():
     user_id = get_current_user_id()
@@ -85,11 +92,18 @@ def get_current_user():
 def handle_preflight():
     if request.method == "OPTIONS":
         response = flask.make_response()
-        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
+        origin = request.headers.get('Origin')
+        if origin and ('*' in allowed_origins or origin in allowed_origins):
+            response.headers.add("Access-Control-Allow-Origin", origin)
         response.headers.add("Access-Control-Allow-Credentials", "true")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
         response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
         return response
+
+def _reset_serializer():
+    return URLSafeTimedSerializer(app.config['SECRET_KEY'], salt='password-reset')
+
+RESET_TOKEN_MAX_AGE = 3600
 
 @app.route('/')
 def root():
@@ -104,14 +118,24 @@ def root():
 
 @app.route('/api/health')
 def health_check():
+    try:
+        db.session.execute(text('SELECT 1'))
+        db_status = 'connected'
+    except Exception:
+        return jsonify({
+            'status': 'unhealthy',
+            'timestamp': datetime.datetime.now().isoformat(),
+            'database': 'error'
+        }), 503
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.datetime.now().isoformat(),
-        'database': 'connected'
+        'database': db_status
     }), 200
 
 
 @app.route('/api/search', methods=['GET'])
+@limiter.limit('30 per minute')
 def search_posts():
     query = request.args.get('q', '').strip()
     label = request.args.get('label', '').strip()
@@ -147,26 +171,22 @@ def search_posts():
 
 ################ AUTHENTICATION ROUTES ###############
 @app.route('/api/login', methods=['POST', 'OPTIONS'])
+@limiter.limit('10 per minute')
 def login():
     data = get_data()
-    email = data['email'].lower().strip()
-    password = data['password']
+    email = data.get('email', '').lower().strip()
+    password = data.get('password', '')
     user = UserModel.query.filter_by(email=email).first()
     if user and user.check_password(password):
         session['user_id'] = user.id
-        print("user id ...", user.id)
-        # login_user(user, force=True)
-        # print("user is auth?", current_user.get_id())
-
-        access_token = create_access_token(identity=email)
         uid = str(user.id)
-        print("the session id is and user id are : ", uid, user.id)
-        return jsonify({'user': user.id, 'uid':uid, 'message': 'Login is successfull', 'token': access_token}), 200
+        return jsonify({'user': user.id, 'uid': uid, 'message': 'Login successful'}), 200
     else:
         return jsonify({'error': 'Invalid email or password.'}), 401
 
 
 @app.route('/api/register', methods=['POST', 'OPTIONS'])
+@limiter.limit('5 per minute')
 def register():
     data = get_data()
     email = data['email'].lower().strip()
@@ -184,7 +204,11 @@ def register():
         new_user.username = make_username(email, first, last, new_user.id)
         db.session.commit()
         session['user_id'] = new_user.id
-        return jsonify({'message': 'new user registered successfully', 'username': new_user.username}), 200
+        return jsonify({
+            'message': 'new user registered successfully',
+            'username': new_user.username,
+            'uid': str(new_user.id)
+        }), 200
 
 
 @app.route('/api/data')
@@ -197,43 +221,57 @@ def data():
 
 @app.route('/api/logout')
 def logout():
-    print("the user id", session.get('user_id'))
     session.pop('user_id', None)
     return jsonify({'message': 'Logged out successfully'}), 200
 
 
 @app.route('/api/forgot_password', methods=['POST'])
+@limiter.limit('5 per minute')
 def forgot_password():
     data = get_data()
-    email = data['email'].lower().strip()
-    if email is None:
+    email = data.get('email', '').lower().strip()
+    if not email:
         return jsonify({'error': 'Email is required'}), 400
-    
+
     user = UserModel.query.filter_by(email=email).first()
+    response = {'message': 'If an account exists for this email, password reset instructions have been sent.'}
     if user:
-        user_id = user.id
-        return jsonify({'user_id': user_id}), 200
-    else:
-        return jsonify({'error': 'Invalid email address'}), 404
-    
-    
+        token = _reset_serializer().dumps({'uid': user.id})
+        if not is_production:
+            response['reset_token'] = token
+    return jsonify(response), 200
+
+
 @app.route('/api/reset_password', methods=['POST'])
+@limiter.limit('5 per minute')
 def reset_password():
     data = get_data()
-    user_id = data['user_id']
-    user = UserModel.query.filter_by(id=user_id).first()
-    if user is None:
-        return jsonify({'error': 'User not found based on given id'}), 404
-    
-    new_password = data['new_password']
-    confirm_password = data['confirm_password']
+    token = data.get('token')
+    new_password = data.get('new_password', '')
+    confirm_password = data.get('confirm_password', '')
 
+    if not token:
+        return jsonify({'error': 'Reset token is required'}), 400
+    if not new_password or len(new_password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters'}), 400
     if new_password != confirm_password:
-        return jsonify({'message': 'The passwords do not match.'}), 400
-    else:
-        user.set_password(new_password)
-        db.session.commit()
-        return jsonify({'message': 'Password updated successfully'}), 200
+        return jsonify({'error': 'Passwords do not match'}), 400
+
+    try:
+        payload = _reset_serializer().loads(token, max_age=RESET_TOKEN_MAX_AGE)
+        user_id = payload['uid']
+    except SignatureExpired:
+        return jsonify({'error': 'Reset link has expired'}), 400
+    except BadSignature:
+        return jsonify({'error': 'Invalid reset link'}), 400
+
+    user = UserModel.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'Invalid reset link'}), 400
+
+    user.set_password(new_password)
+    db.session.commit()
+    return jsonify({'message': 'Password updated successfully'}), 200
 
 
 ################ USER MODEL RELATED ROUTES ###############  
@@ -263,6 +301,9 @@ def update_profile():
     bio = data.get('bio', user.bio)
 
     if 'password' in data and data['password']:
+        old_password = data.get('old_password')
+        if not old_password or not user.check_password(old_password):
+            return jsonify({'error': 'Current password is incorrect'}), 400
         user.set_password(data['password'])
 
     user.first = first
@@ -308,7 +349,7 @@ def create_new_post():
         return jsonify({'error': 'User does not exist to create new post'}), 404
 
     title = data.get('title', '').strip()
-    content = data.get('content', '').strip()
+    content = sanitize_html(data.get('content', '').strip())
     label = data.get('label', '').strip()
     status = data.get('status', 'published')
 
@@ -491,7 +532,7 @@ def update_post(post_id):
         return jsonify({'error': 'Not authorized to edit this post'}), 403
 
     post.title = new_title
-    post.content = new_content
+    post.content = sanitize_html(new_content)
     post.excerpt = make_excerpt(new_content)
     post.updated_at = datetime.datetime.utcnow()
     if post.slug:
@@ -577,7 +618,15 @@ def get_post_by_slug(slug):
         return jsonify({'error': 'Post not found'}), 404
     post.view_count = (post.view_count or 0) + 1
     db.session.commit()
-    return jsonify(post.serialize())
+    data = post.serialize()
+    user_id = get_current_user_id()
+    if user_id:
+        data['is_bookmarked'] = Bookmark.query.filter_by(user_id=user_id, post_id=post.id).first() is not None
+        if post.author_id and post.author_id != user_id:
+            data['is_following_author'] = Follow.query.filter_by(
+                follower_id=user_id, following_id=post.author_id
+            ).first() is not None
+    return jsonify(data)
 
 
 @app.route('/api/authors/<username>', methods=['GET'])
@@ -590,6 +639,12 @@ def get_author(username):
     data = user.serialize(public=True)
     data['post_count'] = post_count
     data['follower_count'] = follower_count
+    follower_id = get_current_user_id()
+    data['is_following'] = bool(
+        follower_id
+        and follower_id != user.id
+        and Follow.query.filter_by(follower_id=follower_id, following_id=user.id).first()
+    )
     return jsonify(data)
 
 
@@ -666,12 +721,17 @@ def rss_feed():
     posts = published_posts_query().order_by(desc(PostModel.created_at)).limit(20).all()
     items = []
     for post in posts:
+        title = html.escape(post.title or '')
+        link_slug = html.escape(post.slug or '')
+        author = html.escape(post.author_name or '')
+        pub_date = html.escape(str(post.created_at or ''))
+        excerpt = post.excerpt or ''
         items.append(f"""    <item>
-      <title>{post.title}</title>
-      <link>https://starlight-blog.vercel.app/post/{post.slug}</link>
-      <description><![CDATA[{post.excerpt or ''}]]></description>
-      <author>{post.author_name}</author>
-      <pubDate>{post.created_at}</pubDate>
+      <title>{title}</title>
+      <link>https://starlight-blog.vercel.app/post/{link_slug}</link>
+      <description><![CDATA[{excerpt}]]></description>
+      <author>{author}</author>
+      <pubDate>{pub_date}</pubDate>
     </item>""")
     rss = f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">

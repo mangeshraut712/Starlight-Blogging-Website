@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
-import { environment } from '../../environments/environment';
+import { Observable, throwError, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { getApiBaseUrl } from '../utils/api-url';
 
 const httpOptions = {
   headers: new HttpHeaders({
@@ -16,9 +16,8 @@ const httpOptions = {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly BASE_URL: string = environment.apiUrl || 'http://localhost:8080';
+  private readonly BASE_URL: string = getApiBaseUrl();
   private readonly UID_KEY = 'starlight_uid';
-  private readonly TOKEN_KEY = 'starlight_auth_token';
 
   constructor(private http: HttpClient) {}
 
@@ -42,32 +41,28 @@ export class AuthService {
    * Check if user is logged in
    */
   isLoggedIn(): boolean {
-    const token = this.getToken();
-    return token !== null && token !== '';
+    return !!this.getUid();
   }
 
-  /**
-   * Get authentication token from localStorage
-   */
-  getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  /**
-   * Set authentication token in localStorage
-   */
-  setToken(token: string): void {
-    if (token) {
-      localStorage.setItem(this.TOKEN_KEY, token);
-    }
-  }
-
-  /**
-   * Clear all authentication data
-   */
   clearAuthData(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.UID_KEY);
+  }
+
+  validateSession(): Observable<boolean> {
+    return this.http.get<any>(`${this.BASE_URL}/api/current_user`, httpOptions).pipe(
+      map(user => {
+        if (user?.id) {
+          this.setUid(String(user.id));
+          return true;
+        }
+        this.clearAuthData();
+        return false;
+      }),
+      catchError(() => {
+        this.clearAuthData();
+        return of(false);
+      })
+    );
   }
 
   /**
@@ -77,11 +72,11 @@ export class AuthService {
     const loginData = { email, password };
     return this.http.post<any>(`${this.BASE_URL}/api/login`, loginData, httpOptions)
       .pipe(
-        tap(response => {
-          if (response && response.token && response.uid) {
-            this.setToken(response.token);
+        map(response => {
+          if (response?.uid) {
             this.setUid(response.uid);
           }
+          return response;
         }),
         catchError(this.handleError)
       );
@@ -94,6 +89,12 @@ export class AuthService {
     const registerData = { email, first, last, password };
     return this.http.post<any>(`${this.BASE_URL}/api/register`, registerData, httpOptions)
       .pipe(
+        map(response => {
+          if (response?.uid) {
+            this.setUid(response.uid);
+          }
+          return response;
+        }),
         catchError(this.handleRegisterError)
       );
   }
@@ -111,9 +112,9 @@ export class AuthService {
   /**
    * Reset user password
    */
-  resetPassword(userId: number, newPassword: string, confirmPassword: string): Observable<any> {
+  resetPassword(token: string, newPassword: string, confirmPassword: string): Observable<any> {
     const resetData = {
-      user_id: userId,
+      token,
       new_password: newPassword,
       confirm_password: confirmPassword
     };

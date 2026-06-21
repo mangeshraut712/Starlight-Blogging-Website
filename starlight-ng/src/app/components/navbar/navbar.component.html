@@ -11,20 +11,20 @@
     </div>
 
     <!-- Navigation Links - Desktop -->
-    <nav class="navbar-nav desktop-nav" *ngIf="isLoggedIn()">
+    <nav class="navbar-nav desktop-nav">
       <a routerLink="/explore" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
         <i class="bi bi-compass"></i>
         <span>Explore</span>
-      </a>
-      <a routerLink="/communities" routerLinkActive="active" class="nav-link">
-        <i class="bi bi-people"></i>
-        <span>Communities</span>
       </a>
       <a routerLink="/search" routerLinkActive="active" class="nav-link">
         <i class="bi bi-search"></i>
         <span>Search</span>
       </a>
-      <a routerLink="/new-post" routerLinkActive="active" class="nav-link">
+      <a routerLink="/communities" routerLinkActive="active" class="nav-link" *ngIf="isLoggedIn()">
+        <i class="bi bi-people"></i>
+        <span>Communities</span>
+      </a>
+      <a routerLink="/new-post" routerLinkActive="active" class="nav-link" *ngIf="isLoggedIn()">
         <i class="bi bi-pencil-square"></i>
         <span>Write</span>
       </a>
@@ -93,7 +93,8 @@
       </ng-template>
 
       <!-- Mobile Menu Toggle -->
-      <button class="mobile-toggle" type="button" (click)="toggleMobileMenu()">
+      <button class="mobile-toggle" type="button" (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="mobileMenuOpen" aria-label="Toggle navigation menu">
         <span class="toggle-line" [class.open]="mobileMenuOpen"></span>
         <span class="toggle-line" [class.open]="mobileMenuOpen"></span>
         <span class="toggle-line" [class.open]="mobileMenuOpen"></span>
@@ -106,9 +107,9 @@
     <!-- Logged In Mobile Menu -->
     <div *ngIf="isLoggedIn(); else guestMobileMenu" class="mobile-menu-content">
       <nav class="mobile-nav">
-        <a routerLink="/homepage-posts" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
+        <a routerLink="/explore" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
           <i class="bi bi-house-door"></i>
-          <span>Dashboard</span>
+          <span>Explore</span>
         </a>
         <a routerLink="/communities" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
           <i class="bi bi-people"></i>
@@ -141,6 +142,14 @@
     <ng-template #guestMobileMenu>
       <div class="mobile-menu-content">
         <nav class="mobile-nav">
+          <a routerLink="/explore" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
+            <i class="bi bi-compass"></i>
+            <span>Explore</span>
+          </a>
+          <a routerLink="/search" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
+            <i class="bi bi-search"></i>
+            <span>Search</span>
+          </a>
           <a routerLink="/login" routerLinkActive="active" (click)="closeMobileMenu()" class="mobile-nav-link">
             <i class="bi bi-box-arrow-in-right"></i>
             <span>Sign In</span>

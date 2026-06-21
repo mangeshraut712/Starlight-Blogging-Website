@@ -2,6 +2,7 @@ export class Post {
   id?: number;
   slug?: string;
   author_name?: string;
+  author_username?: string;
   author_id?: number;
   title?: string;
   created_at?: string;
@@ -13,6 +14,8 @@ export class Post {
   likes?: number;
   view_count?: number;
   status?: string;
+  is_bookmarked?: boolean;
+  is_following_author?: boolean;
 }
 
 export interface PaginatedPosts {

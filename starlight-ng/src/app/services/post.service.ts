@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { Post, PaginatedPosts } from '../models/post';
 import { Like } from '../models/like';
 import { Comment } from '../models/comment';
-import { environment } from '../../environments/environment';
+import { getApiBaseUrl } from '../utils/api-url';
 
 const httpOptions = {
   headers: new HttpHeaders({
@@ -16,7 +16,7 @@ const httpOptions = {
 
 @Injectable({ providedIn: 'root' })
 export class PostService {
-  private BASE_URL: string = environment.apiUrl || 'http://localhost:8080';
+  private BASE_URL: string = getApiBaseUrl();
 
   constructor(private http: HttpClient) {}
 

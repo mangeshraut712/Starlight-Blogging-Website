@@ -13,7 +13,8 @@
 }
 
 .navbar-container {
-  max-width: none;
+  max-width: 100%;
+  width: 100%;
   padding: 0;
   display: flex;
   align-items: center;
@@ -21,6 +22,7 @@
   height: 70px;
   padding-left: 1rem;
   padding-right: 1rem;
+  overflow: hidden;
 }
 
 /* ================== BRAND SECTION ================== */
@@ -470,6 +472,14 @@
 
 /* Mobile Breakpoint */
 @media (max-width: 768px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .desktop-search {
+    display: none;
+  }
+
   .navbar-container {
     padding-left: 0.75rem;
     padding-right: 0.75rem;

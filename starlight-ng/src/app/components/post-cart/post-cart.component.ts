@@ -55,7 +55,8 @@ export class PostCartComponent {
   }
 
   get authorLink(): string[] | null {
-    return this.user?.username ? ['/author', this.user.username] : null;
+    const username = this.currentPost.author_username;
+    return username ? ['/author', username] : null;
   }
 
   getUser(): void {

@@ -21,8 +21,11 @@ export class NewPostComponent implements OnInit {
 
   // TinyMCE Editor Configuration
   editorConfig = {
-    plugins: 'lists link image table code help wordcount',
-    toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image | code | help',
+    base_url: '/tinymce',
+    suffix: '.min',
+    license_key: 'gpl',
+    plugins: 'lists link table code help wordcount',
+    toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link | code | help',
     menubar: false,
     branding: false,
     height: 400,
@@ -71,7 +74,7 @@ export class NewPostComponent implements OnInit {
 
   cancelNewPost(event: Event): void {
     event.preventDefault();
-    this.router.navigate(['/homepage-posts']);
+    this.router.navigate(['/explore']);
   }
 
   createNewPost(): void {
@@ -98,7 +101,7 @@ export class NewPostComponent implements OnInit {
       next: (response) => {
         this.isLoading = false;
         console.log('Post created successfully:', response);
-        this.router.navigate(['/homepage-posts']);
+        this.router.navigate(['/explore']);
       },
       error: (error) => {
         this.isLoading = false;

@@ -46,11 +46,21 @@ Update: any;
 	
   
   goToHome() {
-    this.router.navigate(['homepage-posts']);
+    this.router.navigate(['/explore']);
   }
 
   updateProfile() {
-    this.userService.updateUser(this.user).subscribe(
+    const payload: Record<string, string> = {
+      first: this.user.first || '',
+      last: this.user.last || '',
+      bio: this.user.bio || '',
+      username: this.user.username || ''
+    };
+    if (this.user.password) {
+      payload['password'] = this.user.password;
+      payload['old_password'] = this.oldPassword;
+    }
+    this.userService.updateUser(payload as User).subscribe(
       (response:any) => {
         console.log("updateProfile response = " + response.message);
         // alert('Profile updated successfully');

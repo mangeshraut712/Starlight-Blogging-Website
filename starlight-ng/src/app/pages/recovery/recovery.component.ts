@@ -8,25 +8,26 @@ import { AuthService } from 'src/app/services/auth.service';
   styleUrls: ['./recovery.component.css']
 })
 export class RecoveryComponent {
-  errorMessage: string = "";
-  email: string = "";
-  user_id: number;
-  
-  constructor(private router: Router, private authService: AuthService) {}
-  
-  recover() {
-    this.authService.forgotPassword(this.email).subscribe(
-      (response) => {
-        this.user_id = response.user_id
-        console.log(this.user_id);
-        this.router.navigate(['change-password', this.user_id]);
-      },
-      (error) => {
-        console.log("Error: " + error);
-        this.errorMessage = "This email does not exist in our database.";
-      }
-    )
-    
-  }
+  errorMessage = '';
+  successMessage = '';
+  email = '';
 
+  constructor(private router: Router, private authService: AuthService) {}
+
+  recover(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.authService.forgotPassword(this.email).subscribe({
+      next: (response) => {
+        if (response.reset_token) {
+          this.router.navigate(['/change-password'], { queryParams: { token: response.reset_token } });
+          return;
+        }
+        this.successMessage = response.message || 'If an account exists, reset instructions have been sent.';
+      },
+      error: () => {
+        this.errorMessage = 'Unable to process request. Please try again later.';
+      }
+    });
+  }
 }

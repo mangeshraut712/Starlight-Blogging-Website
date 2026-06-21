@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { SecurityContext } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { Post } from 'src/app/models/post';
 import { Comment } from 'src/app/models/comment';
 import { User } from 'src/app/models/user';
@@ -25,7 +26,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   isFollowing = false;
   errorMessage = '';
   readingProgress = 0;
-  safeContent: SafeHtml = '';
+  safeContent = '';
   shareCopied = false;
 
   constructor(
@@ -33,7 +34,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     private router: Router,
     private postService: PostService,
     private userService: UserService,
-    private authService: AuthService,
+    public authService: AuthService,
     private metaService: MetaService,
     private sanitizer: DomSanitizer
   ) {}
@@ -63,7 +64,10 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     this.postService.getPostBySlug(slug).subscribe({
       next: (post) => {
         this.post = post;
-        this.safeContent = this.sanitizer.bypassSecurityTrustHtml(post.content || '');
+        const sanitized = this.sanitizer.sanitize(SecurityContext.HTML, post.content || '') || '';
+        this.safeContent = sanitized;
+        this.isBookmarked = !!post.is_bookmarked;
+        this.isFollowing = !!post.is_following_author;
         this.metaService.setPageMeta({
           title: post.title || 'Story',
           description: post.excerpt || '',
@@ -144,6 +148,30 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     navigator.clipboard.writeText(url).then(() => {
       this.shareCopied = true;
       setTimeout(() => this.shareCopied = false, 2000);
+    });
+  }
+
+  toggleBookmark(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    if (!this.post.id) return;
+    const next = !this.isBookmarked;
+    this.postService.toggleBookmark(this.post.id, next).subscribe({
+      next: () => this.isBookmarked = next
+    });
+  }
+
+  toggleFollow(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    if (!this.post.author_id || this.post.author_id === Number(this.authService.getUid())) return;
+    const next = !this.isFollowing;
+    this.userService.followUser(this.post.author_id, next).subscribe({
+      next: () => this.isFollowing = next
     });
   }
 

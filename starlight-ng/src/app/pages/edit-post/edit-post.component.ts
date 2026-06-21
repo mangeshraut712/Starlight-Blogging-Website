@@ -19,8 +19,11 @@ export class EditPostComponent implements OnInit {
   isSaving = false;
 
   editorConfig = {
-    plugins: 'lists link image table code help wordcount',
-    toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image | code | help',
+    base_url: '/tinymce',
+    suffix: '.min',
+    license_key: 'gpl',
+    plugins: 'lists link table code help wordcount',
+    toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link | code | help',
     menubar: false,
     branding: false,
     height: 400,
@@ -64,7 +67,7 @@ export class EditPostComponent implements OnInit {
   }
 
   cancelEdit(): void {
-    this.router.navigate(['/homepage-posts']);
+    this.router.navigate(['/explore']);
   }
 
   savePost(): void {
@@ -81,7 +84,7 @@ export class EditPostComponent implements OnInit {
     this.postService.updatePost(this.postId, postData).subscribe({
       next: () => {
         this.isSaving = false;
-        this.router.navigate(['/homepage-posts']);
+        this.router.navigate(['/explore']);
       },
       error: (error) => {
         this.isSaving = false;

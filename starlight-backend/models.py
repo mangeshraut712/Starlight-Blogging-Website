@@ -66,12 +66,14 @@ class PostModel(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def serialize(self, include_content=True):
+        author_username = self.author.username if self.author else None
         data = {
             'id': self.id,
             'slug': self.slug,
             'title': self.title,
             'author_id': self.author_id,
             'author_name': self.author_name,
+            'author_username': author_username,
             'excerpt': self.excerpt,
             'cover_image': self.cover_image,
             'likes': self.likes,
@@ -91,6 +93,8 @@ class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='unique_like'),)
 
     def serialize(self):
         return {'id': self.id, 'user_id': self.user_id, 'post_id': self.post_id}

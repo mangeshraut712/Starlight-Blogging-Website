@@ -23,6 +23,15 @@
             <i class="bi" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
             <span>{{ post.likes || 0 }}</span>
           </button>
+          <button class="action-btn" (click)="toggleBookmark()" [class.active]="isBookmarked" title="Bookmark" *ngIf="isLoggedIn()">
+            <i class="bi" [class.bi-bookmark]="!isBookmarked" [class.bi-bookmark-fill]="isBookmarked"></i>
+            <span>{{ isBookmarked ? 'Saved' : 'Save' }}</span>
+          </button>
+          <button class="action-btn" (click)="toggleFollow()" [class.active]="isFollowing" title="Follow author"
+            *ngIf="isLoggedIn() && post.author_id && post.author_id !== (+authService.getUid()!)">
+            <i class="bi" [class.bi-person-plus]="!isFollowing" [class.bi-person-check-fill]="isFollowing"></i>
+            <span>{{ isFollowing ? 'Following' : 'Follow' }}</span>
+          </button>
           <button class="action-btn" (click)="sharePost()" title="Share">
             <i class="bi bi-share"></i>
             <span>{{ shareCopied ? 'Copied!' : 'Share' }}</span>

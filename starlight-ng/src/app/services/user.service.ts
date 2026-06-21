@@ -6,7 +6,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 
 import { User } from '../models/user';
 import { Post } from '../models/post';
-import { environment } from '../../environments/environment';
+import { getApiBaseUrl } from '../utils/api-url';
 
 const httpOptions = {
   headers: new HttpHeaders({
@@ -20,7 +20,7 @@ const httpOptions = {
   providedIn: 'root'
 })
 export class UserService {
-  private BASE_URL: string = environment.apiUrl || 'http://localhost:8080';
+  private BASE_URL: string = getApiBaseUrl();
 
   constructor(private http: HttpClient) {}
 

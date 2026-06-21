@@ -35,7 +35,7 @@ export class RegistrationComponent implements OnInit {
   ngOnInit(): void {
     // Redirect if already logged in
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/homepage-posts']);
+      this.router.navigate(['/explore']);
     }
   }
   
@@ -76,7 +76,7 @@ export class RegistrationComponent implements OnInit {
         next: (response: any) => {
           this.isLoading = false;
           console.log('Registration successful:', response);
-          this.router.navigate(['/login']);
+          this.router.navigate(['/explore']);
         },
         error: (error: any) => {
           this.isLoading = false;
