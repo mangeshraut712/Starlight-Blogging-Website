@@ -57,7 +57,9 @@ jobs:
         run: .venv/bin/python -c "from app import app; print('Flask app loaded successfully')"
 
       - name: Run backend tests
-        run: .venv/bin/pytest tests/ -q
+        run: .venv/bin/python -m pytest tests/ -q
+        env:
+          PYTHONPATH: .
 
       - name: Check syntax
         run: .venv/bin/python -m py_compile app.py models.py
