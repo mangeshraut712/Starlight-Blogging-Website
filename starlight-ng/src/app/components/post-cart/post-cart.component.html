@@ -1,102 +1,83 @@
 <div *ngIf="successMessage" class="alert alert-success">{{successMessage}}</div>
 
-<div class="posts-container">
-    <div class="post">
-        <div class="post-author-info">
-            <img src="../../../assets/img/account-icon.png" alt="Author Avatar" class="author-avatar">
-            <div>
-                <div class="post-author">{{currentPost.author_name}}</div>
-                <div class="post-meta">
-                  <span class="post-date">{{currentPost.created_at | date:'medium'}}</span>
-                  <span class="reading-time"><i class="bi bi-clock"></i> {{ getReadingTime() }} min read</span>
-                </div>
-            </div>
+<article class="post-card-pro">
+  <div class="card-header">
+    <a [routerLink]="authorLink" class="author-row" *ngIf="authorLink; else authorPlain">
+      <div class="author-avatar">{{ currentPost.author_name?.charAt(0) }}</div>
+      <div>
+        <span class="author-name">{{ currentPost.author_name }}</span>
+        <span class="post-meta">{{ currentPost.created_at | date:'MMM d' }} · {{ getReadingTime() }} min read</span>
+      </div>
+    </a>
+    <ng-template #authorPlain>
+      <div class="author-row">
+        <div class="author-avatar">{{ currentPost.author_name?.charAt(0) }}</div>
+        <div>
+          <span class="author-name">{{ currentPost.author_name }}</span>
+          <span class="post-meta">{{ currentPost.created_at | date:'MMM d' }} · {{ getReadingTime() }} min read</span>
         </div>
+      </div>
+    </ng-template>
+    <a [routerLink]="['/community', currentPost.label]" class="topic-tag">{{ currentPost.label }}</a>
+  </div>
 
-        <div class="post-content">
-            <h3 class="post-title">{{currentPost.title}}</h3>
-            <div [innerHTML]="isExpanded ? currentPost.content : (currentPost.content | slice:0:200) + '...'" class="cart-text"></div>
-            <a *ngIf="currentPost.content.length > 200" (click)="toggleReadMore()" class="read-more">
-                {{ isExpanded ? 'Read Less' : 'Read More' }}
-            </a>
-        </div>
+  <a [routerLink]="postLink" class="card-body-link">
+    <h2 class="card-title">{{ currentPost.title }}</h2>
+    <p class="card-excerpt">{{ getExcerpt() }}</p>
+  </a>
 
-        <div class="post-footer">
-            <a [routerLink]="['/community', currentPost.label]" class="post-label">
-                #{{currentPost.label}}
-            </a>
-            <div class="post-stats">
-                <a (click)="toggleLike()">
-                    <i class="bi fs-4" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
-                    <span class="counter">{{currentPost.likes}}</span>
-                </a>
-                <a (click)="showComments()">
-                    <i class="bi bi-chat fs-4"></i>
-                    <span class="counter">{{comments.length}}</span>
-                </a>
-                <a *ngIf="isOwnPost()" (click)="editPost()" class="btn-edit">
-                    <i class="bi bi-pencil fs-4"></i>
-                </a>
-                <a (click)="deletePost(currentPost)">
-                    <i class="bi bi-trash-fill fs-4"></i>
-                </a>
-            </div>
-        </div>
+  <div class="card-footer">
+    <div class="card-stats">
+      <button type="button" class="stat-btn" (click)="toggleLike(); $event.preventDefault()" [class.active]="isLiked">
+        <i class="bi" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
+        {{ currentPost.likes || 0 }}
+      </button>
+      <button type="button" class="stat-btn" (click)="showComments(); $event.preventDefault()">
+        <i class="bi bi-chat"></i> {{ comments.length }}
+      </button>
+      <button type="button" class="stat-btn" (click)="sharePost(); $event.preventDefault()">
+        <i class="bi bi-share"></i>
+      </button>
     </div>
-</div>
-
-<div class="comment-container">
-    <div *ngIf="seeComments" class="comment-section">
-        <div class="comment-box">
-            <form (ngSubmit)="submitComment()" method="post">
-                <div class="comment-form-row">
-                    <textarea [(ngModel)]="newComment.body" name="body" class="comment-input" placeholder="Write a comment..." rows="2"></textarea>
-                    <button class="btn btn-success submit-comment" type="submit" [disabled]="!newComment.body || newComment.body.trim() === ''">
-                        <i class="bi bi-send"></i>
-                        Send
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <div class="post-comment">
-            <div class="list" *ngFor="let comment of comments">
-                <div class="user">
-                    <div class="user-img">
-                        <img src="../../../assets/img/account-icon.png" alt="User Avatar">
-                    </div>
-                    <div class="user-meta">
-                        <div class="name">{{ comment.author_name }}</div>
-                        <div class="day">{{ comment.created_at | date:'short' }}</div>
-                    </div>
-                </div>
-                <div class="comment-content">
-                    <div class="comment-post" *ngIf="editingCommentId !== comment.id">{{ comment.body }}</div>
-
-                    <!-- Edit comment form -->
-                    <div class="edit-comment-section" *ngIf="editingCommentId === comment.id">
-                        <textarea [(ngModel)]="editingCommentText" class="edit-comment-input" rows="2"></textarea>
-                        <div class="edit-actions">
-                            <button class="btn btn-success btn-sm me-2" (click)="saveCommentEdit(comment)">
-                                <i class="bi bi-check"></i> Save
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm" (click)="cancelEdit()">
-                                <i class="bi bi-x"></i> Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Comment actions (only for user's own comments) -->
-                <div class="comment-actions" *ngIf="isOwnComment(comment)">
-                    <button class="btn btn-sm btn-outline-primary me-2" *ngIf="editingCommentId !== comment.id" (click)="editComment(comment)">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" (click)="deleteComment(comment)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
+    <div class="card-actions" *ngIf="isOwnPost()">
+      <button type="button" class="action-icon" (click)="editPost()" title="Edit"><i class="bi bi-pencil"></i></button>
+      <button type="button" class="action-icon danger" (click)="deletePost(currentPost)" title="Delete"><i class="bi bi-trash"></i></button>
     </div>
+  </div>
+</article>
+
+<div class="comment-container" *ngIf="seeComments">
+  <div class="comment-section">
+    <div class="comment-box" *ngIf="authService.isLoggedIn()">
+      <form (ngSubmit)="submitComment()">
+        <textarea [(ngModel)]="newComment.body" name="body" class="comment-input" placeholder="Write a response..." rows="2"></textarea>
+        <button class="btn btn-success submit-comment" type="submit" [disabled]="!newComment.body?.trim()">Respond</button>
+      </form>
+    </div>
+    <div class="post-comment">
+      <div class="list" *ngFor="let comment of comments">
+        <div class="user">
+          <div class="user-img"><div class="mini-avatar">{{ comment.author_name?.charAt(0) }}</div></div>
+          <div class="user-meta">
+            <div class="name">{{ comment.author_name }}</div>
+            <div class="day">{{ comment.created_at | date:'short' }}</div>
+          </div>
+        </div>
+        <div class="comment-content">
+          <div class="comment-post" *ngIf="editingCommentId !== comment.id">{{ comment.body }}</div>
+          <div class="edit-comment-section" *ngIf="editingCommentId === comment.id">
+            <textarea [(ngModel)]="editingCommentText" class="edit-comment-input" rows="2"></textarea>
+            <div class="edit-actions">
+              <button class="btn btn-success btn-sm me-2" (click)="saveCommentEdit(comment)">Save</button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="cancelEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="comment-actions" *ngIf="isOwnComment(comment)">
+          <button class="btn btn-sm btn-outline-primary me-2" *ngIf="editingCommentId !== comment.id" (click)="editComment(comment)"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger" (click)="deleteComment(comment)"><i class="bi bi-trash"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

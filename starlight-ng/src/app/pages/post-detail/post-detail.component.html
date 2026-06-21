@@ -1,0 +1,81 @@
+<div class="reading-progress" [style.width.%]="readingProgress"></div>
+
+<div class="article-page" *ngIf="!isLoading && post.id; else loadingOrError">
+  <article class="article-container">
+    <header class="article-header">
+      <a [routerLink]="['/community', post.label]" class="article-topic">{{ post.label }}</a>
+      <h1 class="article-title">{{ post.title }}</h1>
+      <p class="article-excerpt" *ngIf="post.excerpt">{{ post.excerpt }}</p>
+
+      <div class="article-byline">
+        <button class="author-link" (click)="goToAuthor()" *ngIf="author?.username">
+          <div class="author-avatar">{{ post.author_name?.charAt(0) }}</div>
+          <div>
+            <span class="author-name">{{ post.author_name }}</span>
+            <span class="article-meta">
+              {{ post.created_at | date:'MMMM d, y' }} · {{ getReadingTime() }} min read
+              <span *ngIf="post.view_count"> · {{ post.view_count }} views</span>
+            </span>
+          </div>
+        </button>
+        <div class="article-actions">
+          <button class="action-btn" (click)="toggleLike()" [class.active]="isLiked" title="Like">
+            <i class="bi" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
+            <span>{{ post.likes || 0 }}</span>
+          </button>
+          <button class="action-btn" (click)="sharePost()" title="Share">
+            <i class="bi bi-share"></i>
+            <span>{{ shareCopied ? 'Copied!' : 'Share' }}</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-cover" *ngIf="post.cover_image">
+      <img [src]="post.cover_image" [alt]="post.title">
+    </div>
+
+    <div class="article-body" [innerHTML]="safeContent"></div>
+
+    <footer class="article-footer">
+      <div class="engagement-bar">
+        <button class="engage-btn" (click)="toggleLike()" [class.active]="isLiked">
+          <i class="bi" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
+          {{ post.likes || 0 }} {{ (post.likes || 0) === 1 ? 'Like' : 'Likes' }}
+        </button>
+        <span class="engage-stat"><i class="bi bi-chat"></i> {{ comments.length }} Comments</span>
+      </div>
+    </footer>
+  </article>
+
+  <section class="comments-section">
+    <h3>Responses ({{ comments.length }})</h3>
+    <div class="comment-compose" *ngIf="isLoggedIn(); else loginPrompt">
+      <textarea [(ngModel)]="newComment" placeholder="Share your thoughts..." rows="3"></textarea>
+      <button class="btn-publish" (click)="submitComment()" [disabled]="!newComment.trim()">Publish</button>
+    </div>
+    <ng-template #loginPrompt>
+      <p class="login-prompt"><a routerLink="/login">Sign in</a> to join the conversation.</p>
+    </ng-template>
+
+    <div class="comment-list">
+      <div class="comment-item" *ngFor="let comment of comments">
+        <div class="comment-avatar">{{ comment.author_name?.charAt(0) }}</div>
+        <div class="comment-body">
+          <strong>{{ comment.author_name }}</strong>
+          <span class="comment-date">{{ comment.created_at | date:'medium' }}</span>
+          <p>{{ comment.body }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<ng-template #loadingOrError>
+  <div class="state-container">
+    <div class="spinner-ring" *ngIf="isLoading"></div>
+    <p *ngIf="isLoading">Loading story...</p>
+    <p *ngIf="!isLoading && errorMessage">{{ errorMessage }}</p>
+    <a routerLink="/explore" *ngIf="errorMessage" class="btn-back">Explore stories</a>
+  </div>
+</ng-template>

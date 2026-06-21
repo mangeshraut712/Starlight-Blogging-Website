@@ -27,6 +27,9 @@ import { CommunityLabelComponent } from './pages/community-label/community-label
 import { CommunitiesComponent } from './pages/communities/communities.component';
 import { SearchComponent } from './pages/search/search.component';
 import { EditPostComponent } from './pages/edit-post/edit-post.component';
+import { PostDetailComponent } from './pages/post-detail/post-detail.component';
+import { AuthorProfileComponent } from './pages/author-profile/author-profile.component';
+import { BookmarksComponent } from './pages/bookmarks/bookmarks.component';
 
 // SERVICES
 import { AuthService } from './services/auth.service';
@@ -52,7 +55,10 @@ import { DataService } from './services/data.service';
     CommunityLabelComponent,
     CommunitiesComponent,
     SearchComponent,
-    EditPostComponent
+    EditPostComponent,
+    PostDetailComponent,
+    AuthorProfileComponent,
+    BookmarksComponent
   ],
   imports: [
     BrowserModule,

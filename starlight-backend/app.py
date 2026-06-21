@@ -5,10 +5,12 @@ import flask
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
-from models import db, login, UserModel, PostModel, Like, Comment
+from models import db, login, UserModel, PostModel, Like, Comment, Bookmark, Follow
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token
-from sqlalchemy import or_
+from sqlalchemy import or_, func, desc
+from utils import make_unique_slug, make_excerpt, make_username
+from schema_migrate import migrate_schema, backfill_data
 
 load_dotenv()
 
@@ -47,6 +49,26 @@ login.init_app(app)
 # Create tables within app context
 with app.app_context():
     db.create_all()
+    migrate_schema()
+    backfill_data()
+
+def published_posts_query():
+    return PostModel.query.filter(
+        (PostModel.status == 'published') | (PostModel.status == None)
+    )
+
+def paginate_query(query, page, per_page):
+    page = max(1, page)
+    per_page = min(max(1, per_page), 50)
+    total = query.count()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+    return {
+        'posts': [p.serialize(include_content=False) for p in items],
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'has_more': (page * per_page) < total
+    }
 
 def get_current_user_id():
     return session.get('user_id')
@@ -97,7 +119,7 @@ def search_posts():
     if not query and not label:
         return jsonify({'error': 'Search query or label filter required'}), 400
 
-    posts_query = PostModel.query
+    posts_query = published_posts_query()
 
     if label:
         posts_query = posts_query.filter_by(label=label)
@@ -158,9 +180,11 @@ def register():
         new_user = UserModel(email=email, first=first, last=last)
         new_user.set_password(password)
         db.session.add(new_user)
+        db.session.flush()
+        new_user.username = make_username(email, first, last, new_user.id)
         db.session.commit()
         session['user_id'] = new_user.id
-        return jsonify({'message': 'new user registered successfully'}), 200
+        return jsonify({'message': 'new user registered successfully', 'username': new_user.username}), 200
 
 
 @app.route('/api/data')
@@ -234,99 +258,104 @@ def update_profile():
         return jsonify({'error': 'User not found'}), 404
     
     data = get_data()
-    first = data['first']
-    last = data['last']
+    first = data.get('first', user.first)
+    last = data.get('last', user.last)
+    bio = data.get('bio', user.bio)
 
-    # Check if new password has a value
-    if 'password' in data:
-        password = data['password']
-        user.set_password(password)
-    else:
-        if first == user.first and last == user.last:
-            return jsonify({'message': 'Nothing was changed.'})
-        
-    # Check if first name or last name has been changed
-    if first != user.first:
-        user.first = first
-    if last != user.last:
-        user.last = last
-        
+    if 'password' in data and data['password']:
+        user.set_password(data['password'])
+
+    user.first = first
+    user.last = last
+    user.bio = bio
+
+    if 'username' in data and data['username']:
+        existing = UserModel.query.filter_by(username=data['username']).first()
+        if existing and existing.id != user.id:
+            return jsonify({'error': 'Username already taken'}), 409
+        user.username = data['username'].lower().strip()
+
     db.session.commit()
-    return jsonify({'message': 'Profile updated successfully!'})
+    return jsonify({'message': 'Profile updated successfully!', 'user': user.serialize()})
        
     
 @app.route('/api/users', methods=['GET'])
 def get_all_users():
+    if not get_current_user_id():
+        return jsonify({'error': 'Not authorized'}), 401
     users = UserModel.query.all()
-    user_list = [user.serialize() for user in users]
-    return jsonify(user_list)
+    return jsonify([user.serialize(public=True) for user in users])
     
 
 @app.route('/api/users/<int:id>', methods=['GET'])
 def get_user_by_id(id):
     user = UserModel.query.filter_by(id=id).first()
     if user:
-        return jsonify(user.serialize())
-    else:
-        return jsonify({'error': 'User not found by id', 'message':id}), 404
+        return jsonify(user.serialize(public=True))
+    return jsonify({'error': 'User not found'}), 404
 
 
 ################ POST MODEL RELATED ROUTES ###############
 @app.route('/api/new-post', methods=['POST'])
 def create_new_post():
     data = get_data()
-    print(f"=== DEBUG: NEW POST REQUEST ===")
-    print(f"DEBUG: Received headers: {dict(request.headers)}")
-    print(f"DEBUG: Received data: {data}")
-    print(f"DEBUG: All session data: {dict(session)}")
-    print(f"DEBUG: Session ID: {session.get('_id', 'None')}")
-
     user_id = get_current_user_id()
-    print(f"DEBUG: user_id from get_current_user_id(): {user_id}")
-
     if not user_id:
-        print("DEBUG: No user ID found in session, returning 401")
         return jsonify({'error': 'Not authorized - Please login first'}), 401
 
     user = UserModel.query.filter_by(id=user_id).first()
-    print(f"DEBUG: Found user: {user}")
-
-    if user:
-        author_id = user.id
-        author_name = user.get_full_name()
-        title = data.get('title')
-        content = data.get('content')
-        likes = 0
-        label = data.get('label')
-
-        print(f"DEBUG: Creating post - title: {title}, label: {label}")
-
-        new_post = PostModel(author_id=author_id, author_name=author_name, title=title, content=content, likes=likes, label=label)
-        db.session.add(new_post)
-        try:
-            db.session.commit()
-            print(f"DEBUG: Post created successfully with ID: {new_post.id}")
-            return jsonify({'message': 'Post was added successfully', 'post': new_post.serialize()}), 200
-        except Exception as e:
-            db.session.rollback()
-            print(f"DEBUG: Failed to commit post: {e}")
-            return jsonify({'error': 'Failed to save post to database'}), 500
-    else:
-        print("DEBUG: User not found in database")
+    if not user:
         return jsonify({'error': 'User does not exist to create new post'}), 404
+
+    title = data.get('title', '').strip()
+    content = data.get('content', '').strip()
+    label = data.get('label', '').strip()
+    status = data.get('status', 'published')
+
+    if not title or not content or not label:
+        return jsonify({'error': 'Title, content, and community are required'}), 400
+
+    new_post = PostModel(
+        author_id=user.id,
+        author_name=user.get_full_name(),
+        title=title,
+        content=content,
+        excerpt=make_excerpt(content),
+        likes=0,
+        label=label,
+        status=status,
+        view_count=0
+    )
+    db.session.add(new_post)
+    db.session.flush()
+    new_post.slug = make_unique_slug(title, new_post.id)
+    db.session.commit()
+    return jsonify({'message': 'Post was added successfully', 'post': new_post.serialize()}), 200
         
             
 @app.route('/api/posts', methods=['GET'])
 def get_all_posts():
     label = request.args.get('label')
+    sort = request.args.get('sort', 'newest')
+    page = request.args.get('page', type=int)
+    per_page = request.args.get('per_page', 12, type=int)
+
+    query = published_posts_query()
     if label:
-        posts = PostModel.query.filter_by(label=label).all()
+        query = query.filter_by(label=label)
+
+    if sort == 'trending':
+        query = query.order_by(desc(PostModel.likes + PostModel.view_count), desc(PostModel.created_at))
+    elif sort == 'popular':
+        query = query.order_by(desc(PostModel.likes), desc(PostModel.created_at))
     else:
-        posts = PostModel.query.all()
-        
-    post_list = [post.serialize() for post in posts]
-    sorted_posts = sorted(post_list, key=lambda x: x['created_at'], reverse=True)
-    return jsonify(sorted_posts)
+        query = query.order_by(desc(PostModel.created_at))
+
+    if page:
+        return jsonify(paginate_query(query, page, per_page))
+
+    posts = query.all()
+    return jsonify([post.serialize(include_content=False) for post in posts])
     
 
 @app.route('/api/user-posts', methods=['GET'])
@@ -344,10 +373,13 @@ def get_user_posts():
 @app.route('/api/posts/<int:post_id>', methods=['GET'])
 def get_post_by_id(post_id):
     post = PostModel.query.filter_by(id=post_id).first()
-    if post:
-        return jsonify(post.serialize())
-    else:
-        return jsonify({'error': 'Post not found by post_id', 'message':id}), 404
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+    if post.status == 'draft' and post.author_id != get_current_user_id():
+        return jsonify({'error': 'Post not found'}), 404
+    post.view_count = (post.view_count or 0) + 1
+    db.session.commit()
+    return jsonify(post.serialize())
 
 
 #liking a post
@@ -460,6 +492,10 @@ def update_post(post_id):
 
     post.title = new_title
     post.content = new_content
+    post.excerpt = make_excerpt(new_content)
+    post.updated_at = datetime.datetime.utcnow()
+    if post.slug:
+        post.slug = make_unique_slug(new_title, post.id)
     db.session.commit()
 
     return jsonify(post.serialize()), 200
@@ -507,6 +543,146 @@ def update_comment(comment_id):
     db.session.commit()
 
     return jsonify(comment.serialize()), 200
+
+
+################ PLATFORM & DISCOVERY ROUTES ###############
+
+@app.route('/api/stats', methods=['GET'])
+def platform_stats():
+    return jsonify({
+        'writers': UserModel.query.count(),
+        'posts': published_posts_query().count(),
+        'communities': db.session.query(PostModel.label).distinct().count(),
+        'comments': Comment.query.count(),
+        'total_likes': db.session.query(func.sum(PostModel.likes)).scalar() or 0
+    })
+
+
+@app.route('/api/trending', methods=['GET'])
+def trending_posts():
+    limit = min(request.args.get('limit', 6, type=int), 20)
+    posts = published_posts_query().order_by(
+        desc(PostModel.likes + PostModel.view_count),
+        desc(PostModel.created_at)
+    ).limit(limit).all()
+    return jsonify([p.serialize(include_content=False) for p in posts])
+
+
+@app.route('/api/posts/slug/<slug>', methods=['GET'])
+def get_post_by_slug(slug):
+    post = PostModel.query.filter_by(slug=slug).first()
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+    if post.status == 'draft' and post.author_id != get_current_user_id():
+        return jsonify({'error': 'Post not found'}), 404
+    post.view_count = (post.view_count or 0) + 1
+    db.session.commit()
+    return jsonify(post.serialize())
+
+
+@app.route('/api/authors/<username>', methods=['GET'])
+def get_author(username):
+    user = UserModel.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': 'Author not found'}), 404
+    post_count = published_posts_query().filter_by(author_id=user.id).count()
+    follower_count = Follow.query.filter_by(following_id=user.id).count()
+    data = user.serialize(public=True)
+    data['post_count'] = post_count
+    data['follower_count'] = follower_count
+    return jsonify(data)
+
+
+@app.route('/api/authors/<username>/posts', methods=['GET'])
+def get_author_posts(username):
+    user = UserModel.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': 'Author not found'}), 404
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 12, type=int)
+    query = published_posts_query().filter_by(author_id=user.id).order_by(desc(PostModel.created_at))
+    return jsonify(paginate_query(query, page, per_page))
+
+
+@app.route('/api/posts/<int:post_id>/bookmark', methods=['POST', 'DELETE'])
+def bookmark_post(post_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
+    post = PostModel.query.get(post_id)
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+
+    existing = Bookmark.query.filter_by(user_id=user_id, post_id=post_id).first()
+    if request.method == 'POST':
+        if existing:
+            return jsonify({'bookmarked': True})
+        db.session.add(Bookmark(user_id=user_id, post_id=post_id))
+        db.session.commit()
+        return jsonify({'bookmarked': True})
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+    return jsonify({'bookmarked': False})
+
+
+@app.route('/api/bookmarks', methods=['GET'])
+def get_bookmarks():
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'error': 'Not authorized'}), 401
+    bookmarks = Bookmark.query.filter_by(user_id=user_id).order_by(desc(Bookmark.created_at)).all()
+    post_ids = [b.post_id for b in bookmarks]
+    posts = PostModel.query.filter(PostModel.id.in_(post_ids)).all() if post_ids else []
+    post_map = {p.id: p for p in posts}
+    return jsonify([post_map[b.post_id].serialize(include_content=False) for b in bookmarks if b.post_id in post_map])
+
+
+@app.route('/api/users/<int:user_id>/follow', methods=['POST', 'DELETE'])
+def follow_user(user_id):
+    follower_id = get_current_user_id()
+    if not follower_id:
+        return jsonify({'error': 'Not authorized'}), 401
+    if follower_id == user_id:
+        return jsonify({'error': 'Cannot follow yourself'}), 400
+    target = UserModel.query.get(user_id)
+    if not target:
+        return jsonify({'error': 'User not found'}), 404
+
+    existing = Follow.query.filter_by(follower_id=follower_id, following_id=user_id).first()
+    if request.method == 'POST':
+        if not existing:
+            db.session.add(Follow(follower_id=follower_id, following_id=user_id))
+            db.session.commit()
+        return jsonify({'following': True})
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+    return jsonify({'following': False})
+
+
+@app.route('/api/feed/rss', methods=['GET'])
+def rss_feed():
+    posts = published_posts_query().order_by(desc(PostModel.created_at)).limit(20).all()
+    items = []
+    for post in posts:
+        items.append(f"""    <item>
+      <title>{post.title}</title>
+      <link>https://starlight-blog.vercel.app/post/{post.slug}</link>
+      <description><![CDATA[{post.excerpt or ''}]]></description>
+      <author>{post.author_name}</author>
+      <pubDate>{post.created_at}</pubDate>
+    </item>""")
+    rss = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>StarLight Blog</title>
+    <link>https://starlight-blog.vercel.app</link>
+    <description>Stories from the StarLight community</description>
+{chr(10).join(items)}
+  </channel>
+</rss>"""
+    return rss, 200, {'Content-Type': 'application/rss+xml'}
 
 
 if __name__ == '__main__':

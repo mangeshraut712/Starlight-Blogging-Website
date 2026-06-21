@@ -4,19 +4,20 @@ import { PostService } from 'src/app/services/post.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { ActivatedRoute } from '@angular/router';
 
-
 @Component({
   selector: 'app-homepage-posts',
   templateUrl: './homepage-posts.component.html',
   styleUrls: ['./homepage-posts.component.css']
 })
 export class HomepagePostsComponent {
-  public postList?: Post[];
   posts: Post[] = [];
   isLoading = false;
+  isLoadingMore = false;
   sortOption = 'newest';
-  filterOption = 'all';
   isMyPostsRoute = false;
+  page = 1;
+  hasMore = false;
+  total = 0;
 
   constructor(
     private postService: PostService,
@@ -24,78 +25,73 @@ export class HomepagePostsComponent {
     private route: ActivatedRoute
   ) {}
 
-  ngOnInit(){
-    // Check if this is the "My Posts" route
+  ngOnInit(): void {
     this.route.data.subscribe(data => {
       this.isMyPostsRoute = data['onlyUserPosts'] === true;
     });
-    this.loadPosts();
+    this.loadPosts(true);
   }
 
-  loadPosts() {
-    this.isLoading = true;
+  loadPosts(reset = false): void {
+    if (reset) {
+      this.page = 1;
+      this.posts = [];
+    }
+    this.isLoading = reset;
+    this.isLoadingMore = !reset;
 
     if (this.isMyPostsRoute) {
-      // Show only current user's posts
-      this.postService.getUserPosts().subscribe(
-        (response: Post[]) => {
+      this.postService.getUserPosts().subscribe({
+        next: (response) => {
           this.posts = this.sortPosts(response);
+          this.hasMore = false;
           this.isLoading = false;
+          this.isLoadingMore = false;
         },
-        (error) => {
-          console.log("error retrieving user posts: ", error);
-          this.isLoading = false;
-        }
-      );
-    } else {
-      // Show ALL posts from all users for the main dashboard
-      this.postService.getAllPosts().subscribe(
-        (response: Post[]) => {
-          // Apply initial sorting (default newest)
-          this.posts = this.sortPosts(response);
-          this.isLoading = false;
-          console.log('Dashboard posts loaded:', this.posts.length);
-        },
-        (error) => {
-          console.log("error retrieving posts: ", error);
-          this.isLoading = false;
-        }
-      );
+        error: () => { this.isLoading = false; this.isLoadingMore = false; }
+      });
+      return;
     }
+
+    this.postService.getPostsPaginated(this.page, 12, this.sortOption).subscribe({
+      next: (response) => {
+        this.posts = reset ? response.posts : [...this.posts, ...response.posts];
+        this.hasMore = response.has_more;
+        this.total = response.total;
+        this.isLoading = false;
+        this.isLoadingMore = false;
+      },
+      error: () => { this.isLoading = false; this.isLoadingMore = false; }
+    });
+  }
+
+  loadMore(): void {
+    if (!this.hasMore || this.isLoadingMore) return;
+    this.page++;
+    this.loadPosts(false);
   }
 
   sortPosts(posts: Post[]): Post[] {
     const sorted = [...posts];
     switch (this.sortOption) {
-      case 'newest':
-        return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      case 'oldest':
-        return sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      case 'most_liked':
-        return sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-      case 'least_liked':
-        return sorted.sort((a, b) => (a.likes || 0) - (b.likes || 0));
-      case 'longest':
-        return sorted.sort((a, b) => (b.content?.length || 0) - (a.content?.length || 0));
-      case 'shortest':
-        return sorted.sort((a, b) => (a.content?.length || 0) - (b.content?.length || 0));
-      case 'alphabetical':
-        return sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-      default:
-        return sorted;
+      case 'newest': return sorted.sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime());
+      case 'oldest': return sorted.sort((a, b) => new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime());
+      case 'most_liked': return sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      case 'least_liked': return sorted.sort((a, b) => (a.likes || 0) - (b.likes || 0));
+      case 'alphabetical': return sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      default: return sorted;
     }
   }
 
-  onSortChange() {
-    this.posts = this.sortPosts(this.posts);
+  onSortChange(): void {
+    this.loadPosts(true);
   }
 
-  onPostDeleted() {
-    // Reload posts after deletion
-    this.loadPosts();
+  onPostDeleted(postId: number): void {
+    this.posts = this.posts.filter(p => p.id !== postId);
   }
 
-  trackByPost(index: number, post: any): any {
-    return post.id;
+  trackByPost(index: number, post: Post): number {
+    return post.id!;
   }
 }

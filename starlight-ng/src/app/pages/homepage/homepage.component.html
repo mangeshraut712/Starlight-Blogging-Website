@@ -1,152 +1,81 @@
- 
-
-<!-- HERO SECTION - Starlight Community Landing -->
-<section class="hero-section">
-    <div class="hero-overlay"></div>
-    <div class="container">
-        <div class="row align-items-center min-vh-100">
-            <!-- Left Content -->
-            <div class="col-xl-7 col-lg-8 col-md-12 hero-content-wrapper">
-                <div class="hero-content">
-                    <h1 class="hero-title">
-                        Share Your Writing with the <span class="text-gradient">Universe</span>
-                    </h1>
-                    <p class="hero-subtitle">
-                        Let each post become one of its stars. Explore the power of writing with everyone, everywhere.
-                        Join our cosmic community where stories come alive under the stars.
-                    </p>
-
-                    <!-- Call to Action -->
-                    <div class="cta-section mt-5">
-                        <button class="cta-button" (click)="register($event)">
-                            <i class="bi bi-rocket-takeoff me-2"></i>
-                            Start Writing Today
-                        </button>
-                        <div class="cta-subtext mt-3">
-                            🚀 Join 1000+ writers sharing their cosmic stories
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Content -->
-            <div class="col-xl-5 col-lg-4 col-md-12 hero-visual-wrapper">
-                <div class="hero-visual">
-                    <div class="floating-elements">
-                        <div class="element element-1">✨</div>
-                        <div class="element element-2">🌟</div>
-                        <div class="element element-3">📖</div>
-                        <div class="element element-4">☄️</div>
-                    </div>
-                    <img class="hero-image" src="assets/img/steff.jpeg" alt="Writer Inspiration">
-                    <div class="image-glow"></div>
-                </div>
-            </div>
-        </div>
+<!-- Professional Publishing Platform Landing -->
+<section class="hero-pro">
+  <div class="hero-inner">
+    <p class="hero-eyebrow">Professional Publishing Platform</p>
+    <h1>Where every story<br><span class="gradient-text">deserves an audience</span></h1>
+    <p class="hero-lead">
+      StarLight is a modern publishing platform for writers who want reach, beautiful reading experiences,
+      and a community that cares about great content — built for the era beyond the blog post.
+    </p>
+    <div class="hero-cta">
+      <button class="btn-primary-lg" (click)="startWriting()">
+        <i class="bi bi-pencil-square"></i> Start Writing
+      </button>
+      <button class="btn-secondary-lg" (click)="exploreStories()">
+        <i class="bi bi-compass"></i> Explore Stories
+      </button>
     </div>
+    <div class="hero-stats" *ngIf="!isLoading">
+      <div class="stat"><strong>{{ stats.writers }}</strong><span>Writers</span></div>
+      <div class="stat"><strong>{{ stats.posts }}</strong><span>Stories</span></div>
+      <div class="stat"><strong>{{ stats.communities }}</strong><span>Topics</span></div>
+      <div class="stat"><strong>{{ stats.comments }}</strong><span>Discussions</span></div>
+    </div>
+  </div>
 </section>
 
-<!-- ABOUT STARLIGHT SECTION -->
-<section class="about-section">
-    <div class="container">
-        <div class="row align-items-center g-5">
-            <!-- Left Content -->
-            <div class="col-lg-6 col-md-12">
-                <div class="about-content">
-                    <div class="section-badge mb-4">✨ About StarLight</div>
-
-                    <h2 class="about-title mb-4">
-                        A Cosmic Space for <span class="highlight-text">Storytellers</span>
-                    </h2>
-
-                    <p class="about-description mb-4">
-                        Our journey began as a creative class project exploring digital spaces, but we discovered something truly magical.
-                        Our friend Steff opened our eyes to the transformative power of storytelling, inspiring us to create a universe
-                        where every voice can shine like a star.
-                    </p>
-
-                    <p class="about-description mb-4">
-                        <strong>StarLight</strong> is more than a platform—it's a constellation of creative minds connecting through the cosmic art of writing.
-                        Whether you're a seasoned author, an emerging voice, or simply moved by the power of words, you belong here.
-                    </p>
-
-                    <!-- Key Features -->
-                    <div class="features-grid mb-5">
-                        <div class="feature-item">
-                            <div class="feature-icon">💫</div>
-                            <div>
-                                <strong>Cosmic Community</strong>
-                                <p>Connect with writers from around the world</p>
-                            </div>
-                        </div>
-
-                        <div class="feature-item">
-                            <div class="feature-icon">📝</div>
-                            <div>
-                                <strong>Creative Freedom</strong>
-                                <p>Share in any community that sparks your creativity</p>
-                            </div>
-                        </div>
-
-                        <div class="feature-item">
-                            <div class="feature-icon">🌟</div>
-                            <div>
-                                <strong>Discovery</strong>
-                                <p>Find inspiration in stories that touch your soul</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quote -->
-                    <blockquote class="cosmic-quote">
-                        <p class="quote-text">
-                            "Every story is a star waiting to shine in the vast universe of human connection."
-                        </p>
-                        <footer class="quote-author">
-                            <cite>— StarLight Community</cite>
-                        </footer>
-                    </blockquote>
-                </div>
-            </div>
-
-            <!-- Right Content -->
-            <div class="col-lg-6 col-md-12">
-                <div class="media-content">
-                    <div class="video-wrapper">
-                        <iframe
-                            class="about-video"
-                            src="https://www.youtube.com/embed/vyVpRiqOvt4"
-                            title="StarLight - Writing the Future"
-                            allowfullscreen
-                            loading="lazy">
-                        </iframe>
-
-                        <div class="video-glow"></div>
-                    </div>
-
-                    <div class="video-caption text-center">
-                        <small class="caption-text">🌟 Watch our story unfold in motion 🌟</small>
-                    </div>
-
-                    <!-- Stats -->
-                    <div class="platform-stats mt-4">
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-number">1000+</div>
-                                <div class="stat-label">Active Writers</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-number">50+</div>
-                                <div class="stat-label">Communities</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-number">∞</div>
-                                <div class="stat-label">Stories Shared</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<section class="features-pro">
+  <div class="container">
+    <h2>Everything you need to publish like a pro</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <i class="bi bi-type"></i>
+        <h3>Beautiful Reader</h3>
+        <p>Medium-inspired typography, reading progress, and distraction-free article pages.</p>
+      </div>
+      <div class="feature-card">
+        <i class="bi bi-people"></i>
+        <h3>Author Profiles</h3>
+        <p>Build your writer identity with public profiles, followers, and story archives.</p>
+      </div>
+      <div class="feature-card">
+        <i class="bi bi-search"></i>
+        <h3>Smart Discovery</h3>
+        <p>Search, trending stories, communities, and personalized reading lists.</p>
+      </div>
+      <div class="feature-card">
+        <i class="bi bi-chat-heart"></i>
+        <h3>Real Engagement</h3>
+        <p>Likes, comments, bookmarks, and shareable links for every story.</p>
+      </div>
     </div>
+  </div>
+</section>
+
+<section class="trending-section" *ngIf="trendingPosts.length">
+  <div class="container">
+    <div class="section-header">
+      <h2>Trending on StarLight</h2>
+      <a routerLink="/explore" class="see-all">See all stories →</a>
+    </div>
+    <div class="trending-grid">
+      <a [routerLink]="['/post', post.slug]" class="trending-card" *ngFor="let post of trendingPosts">
+        <span class="card-topic">{{ post.label }}</span>
+        <h3>{{ post.title }}</h3>
+        <p>{{ post.excerpt }}</p>
+        <div class="card-meta">
+          <span>{{ post.author_name }}</span>
+          <span><i class="bi bi-heart"></i> {{ post.likes || 0 }}</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="cta-pro">
+  <div class="container">
+    <h2>Ready to share your voice with the world?</h2>
+    <p>Join writers publishing stories that matter. No gatekeeping — just great content.</p>
+    <button class="btn-primary-lg" (click)="startWriting()">Create Your Account</button>
+  </div>
 </section>

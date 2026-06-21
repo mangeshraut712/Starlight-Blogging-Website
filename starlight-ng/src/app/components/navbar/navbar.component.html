@@ -4,7 +4,7 @@
 
     <!-- Logo Section -->
     <div class="navbar-brand">
-      <a [routerLink]="isLoggedIn() ? '/homepage-posts' : '/'" class="brand-link">
+      <a [routerLink]="isLoggedIn() ? '/explore' : '/'" class="brand-link">
         <img src="assets/img/starlight-logo.svg" alt="Starlight Logo" class="brand-logo">
         <span class="brand-name">StarLight</span>
       </a>
@@ -12,9 +12,9 @@
 
     <!-- Navigation Links - Desktop -->
     <nav class="navbar-nav desktop-nav" *ngIf="isLoggedIn()">
-      <a routerLink="/homepage-posts" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
-        <i class="bi bi-house-door"></i>
-        <span>Dashboard</span>
+      <a routerLink="/explore" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+        <i class="bi bi-compass"></i>
+        <span>Explore</span>
       </a>
       <a routerLink="/communities" routerLinkActive="active" class="nav-link">
         <i class="bi bi-people"></i>
@@ -47,9 +47,9 @@
       <div *ngIf="isLoggedIn(); else guestActions" class="user-section">
         <!-- Quick Options -->
         <div class="user-quick-actions">
-          <a routerLink="/my-posts" routerLinkActive="active" class="quick-link">
-            <i class="bi bi-journal-text"></i>
-            <span>My Posts</span>
+          <a routerLink="/bookmarks" routerLinkActive="active" class="quick-link">
+            <i class="bi bi-bookmark"></i>
+            <span>Saved</span>
           </a>
         </div>
 

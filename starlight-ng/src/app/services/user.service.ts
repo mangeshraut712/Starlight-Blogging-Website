@@ -5,6 +5,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 
 import { User } from '../models/user';
+import { Post } from '../models/post';
 import { environment } from '../../environments/environment';
 
 const httpOptions = {
@@ -19,37 +20,38 @@ const httpOptions = {
   providedIn: 'root'
 })
 export class UserService {
-   private BASE_URL: string = environment.apiUrl || 'http://localhost:8080';
-  private apiUrl = 'http://localhost:5000/api/users';
-  private updateUrl = 'http://localhost:5000/api/update-profile';
-  
-  
-  constructor(private http: HttpClient) { }
+  private BASE_URL: string = environment.apiUrl || 'http://localhost:8080';
 
-   /** GET users from the server */
-   getAllUsers(): Observable<User[]> {
-    return this.http.get<User[]>(`${this.BASE_URL}/api/users`);
+  constructor(private http: HttpClient) {}
+
+  getAllUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${this.BASE_URL}/api/users`, httpOptions);
   }
-  
-  /** GET user by id. Will 404 if id not found */
+
   getUserById(id: number): Observable<User> {
-    const url = `${this.BASE_URL}/api/users/${id}`;
-    // return this.http.get<User>(url);
-    return this.http.get<User>(url);
+    return this.http.get<User>(`${this.BASE_URL}/api/users/${id}`);
   }
-  
+
+  getAuthor(username: string): Observable<User> {
+    return this.http.get<User>(`${this.BASE_URL}/api/authors/${username}`);
+  }
+
+  getAuthorPosts(username: string, page = 1): Observable<{posts: Post[]; page: number; per_page: number; total: number; has_more: boolean}> {
+    return this.http.get<{posts: Post[]; page: number; per_page: number; total: number; has_more: boolean}>(
+      `${this.BASE_URL}/api/authors/${username}/posts?page=${page}`
+    );
+  }
+
+  followUser(userId: number, follow: boolean) {
+    const method = follow ? 'post' : 'delete';
+    return this.http.request(method, `${this.BASE_URL}/api/users/${userId}/follow`, httpOptions);
+  }
 
   getUserData(): Observable<User> {
-    // Pass the session ID in the withCredentials option
-    return this.http.get<User>(`${this.BASE_URL}/api/current_user`, { withCredentials: true });
-    // { withCredentials: true }
+    return this.http.get<User>(`${this.BASE_URL}/api/current_user`, httpOptions);
   }
-  /** PUT: update the user on the server */
+
   updateUser(user: User): Observable<User> {
-    // const url = `${this.apiUrl}/${user.id}`
-    // return this.http.put(this.userUrl + '/update', user, httpOptions);
-    // return this.http.put<User>(url, user, httpOptions);
     return this.http.put<User>(`${this.BASE_URL}/api/update-profile`, user, httpOptions);
-  
   }
 }

@@ -8,9 +8,9 @@
       <div class="container">
         <div class="row align-items-center">
           <div class="col-12 col-lg-8">
-            <h1 class="dashboard-title">{{ isMyPostsRoute ? 'My Posts' : 'Latest Posts' }}</h1>
+            <h1 class="dashboard-title">{{ isMyPostsRoute ? 'My Stories' : 'Explore Stories' }}</h1>
             <p class="dashboard-subtitle" *ngIf="!isMyPostsRoute">
-              Discover amazing stories and insights from our community
+              Discover thoughtful writing from our community of authors
             </p>
             <p class="dashboard-subtitle" *ngIf="isMyPostsRoute">
               Personal dashboard for your published content
@@ -76,14 +76,19 @@
             <app-post-cart
               [currentPost]="cpost"
               *ngFor="let cpost of posts; trackBy: trackByPost"
-              (postDeleted)="onPostDeleted()"
+              (postDeleted)="onPostDeleted($event)"
               class="post-card-wrapper">
             </app-post-cart>
           </div>
 
-          <!-- Load More or End Indicator -->
-          <div class="feed-footer">
-            <p class="feed-end">You've reached the end of the feed 🎉</p>
+          <!-- Load More -->
+          <div class="feed-footer" *ngIf="hasMore">
+            <button class="btn-load-more" (click)="loadMore()" [disabled]="isLoadingMore">
+              {{ isLoadingMore ? 'Loading...' : 'Load more stories' }}
+            </button>
+          </div>
+          <div class="feed-footer" *ngIf="!hasMore && posts.length > 0">
+            <p class="feed-end">You've read all {{ total }} stories</p>
           </div>
         </div>
       </div>

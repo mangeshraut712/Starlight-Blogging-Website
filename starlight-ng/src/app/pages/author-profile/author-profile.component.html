@@ -1,0 +1,43 @@
+<div class="author-page" *ngIf="author && !isLoading; else loading">
+  <header class="author-header">
+    <div class="author-avatar-lg">{{ author.first?.charAt(0) }}{{ author.last?.charAt(0) }}</div>
+    <div class="author-info">
+      <h1>{{ author.first }} {{ author.last }}</h1>
+      <p class="author-handle">@{{ author.username }}</p>
+      <p class="author-bio" *ngIf="author.bio">{{ author.bio }}</p>
+      <p class="author-bio muted" *ngIf="!author.bio">Writer on StarLight</p>
+      <div class="author-stats">
+        <span><strong>{{ author.post_count || 0 }}</strong> stories</span>
+        <span><strong>{{ author.follower_count || 0 }}</strong> followers</span>
+      </div>
+      <button class="btn-follow" *ngIf="isLoggedIn()" (click)="toggleFollow()">
+        {{ isFollowing ? 'Following' : 'Follow' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="author-posts">
+    <h2>Published Stories</h2>
+    <div class="posts-list" *ngIf="posts.length; else noPosts">
+      <a [routerLink]="['/post', post.slug]" class="post-preview" *ngFor="let post of posts">
+        <div class="preview-meta">
+          <span>{{ post.created_at | date:'MMM d, y' }}</span>
+          <span>{{ post.label }}</span>
+        </div>
+        <h3>{{ post.title }}</h3>
+        <p>{{ post.excerpt }}</p>
+        <div class="preview-stats">
+          <span><i class="bi bi-heart"></i> {{ post.likes || 0 }}</span>
+          <span><i class="bi bi-clock"></i> read</span>
+        </div>
+      </a>
+    </div>
+    <ng-template #noPosts>
+      <p class="empty">No published stories yet.</p>
+    </ng-template>
+  </section>
+</div>
+
+<ng-template #loading>
+  <div class="loading-state"><div class="spinner-ring"></div></div>
+</ng-template>
