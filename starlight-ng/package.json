@@ -1,6 +1,7 @@
 {
   "name": "starlight-ng",
   "version": "0.0.0",
+  "homepage": "https://mangeshraut712.github.io/Starlight-Blogging-Website/",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port=4200 --proxy-config proxy.conf.json",

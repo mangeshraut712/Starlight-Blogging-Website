@@ -37,9 +37,14 @@ app.permanent_session_lifetime = datetime.timedelta(hours=24)
 if is_production:
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    # Cross-origin GitHub Pages → Render API needs SameSite=None
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 
-allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*').split(',')
+site_url = os.environ.get(
+    'SITE_URL',
+    'https://mangeshraut712.github.io/Starlight-Blogging-Website'
+).rstrip('/')
+allowed_origins = [o.strip() for o in os.environ.get('ALLOWED_ORIGINS', '*').split(',') if o.strip()]
 CORS(app,
      supports_credentials=True,
      origins=allowed_origins,
@@ -728,7 +733,7 @@ def rss_feed():
         excerpt = post.excerpt or ''
         items.append(f"""    <item>
       <title>{title}</title>
-      <link>https://starlight-blog.vercel.app/post/{link_slug}</link>
+      <link>{site_url}/post/{link_slug}</link>
       <description><![CDATA[{excerpt}]]></description>
       <author>{author}</author>
       <pubDate>{pub_date}</pubDate>
@@ -737,7 +742,7 @@ def rss_feed():
 <rss version="2.0">
   <channel>
     <title>StarLight Blog</title>
-    <link>https://starlight-blog.vercel.app</link>
+    <link>{site_url}</link>
     <description>Stories from the StarLight community</description>
 {chr(10).join(items)}
   </channel>

@@ -2,7 +2,7 @@
 
 ```
 Starlight-Blogging-Website/
-├── .github/workflows/       # CI and deploy verification
+├── .github/workflows/       # CI and GitHub Pages deploy
 ├── docs/                    # Documentation
 ├── starlight-backend/       # Flask API (Python)
 │   ├── app.py               # Application entry + routes
@@ -18,10 +18,8 @@ Starlight-Blogging-Website/
 │   ├── src/app/             # Components, pages, services
 │   ├── angular.json
 │   ├── package.json
-│   ├── proxy.conf.json      # Dev API proxy → localhost:8080
-│   └── vercel.json          # Deploy config when rootDir = starlight-ng
+│   └── proxy.conf.json      # Dev API proxy → localhost:8080
 ├── render.yaml              # Render blueprint (API + Postgres)
-├── vercel.json              # Deploy config when rootDir = repo root
 └── README.md
 ```
 
@@ -44,6 +42,6 @@ Starlight-Blogging-Website/
 
 ## Deployment
 
-- **Frontend:** Vercel (`vercel.json` at repo root or `starlight-ng/vercel.json`)
+- **Frontend:** GitHub Pages (Actions workflow, base path `/Starlight-Blogging-Website/`)
 - **Backend:** Render (`render.yaml`)
 - **CI:** GitHub Actions on push to `main` / `develop`

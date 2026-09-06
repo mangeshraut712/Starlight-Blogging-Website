@@ -1,15 +1,22 @@
-name: Deploy to Vercel
+name: Deploy GitHub Pages
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
-# Vercel GitHub integration auto-deploys on push to main.
-# This workflow verifies the production build passes before deployment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  verify-build:
-    name: Verify Production Build
+  build:
+    name: Build Angular app
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,11 +32,33 @@ jobs:
           cache: 'npm'
           cache-dependency-path: starlight-ng/package-lock.json
 
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build production bundle
-        run: npm run build:prod
+        run: npm run build:prod -- --base-href=/Starlight-Blogging-Website/
 
-      - name: Type check
-        run: npx tsc -p tsconfig.app.json --noEmit
+      - name: Prepare static site
+        run: |
+          touch dist/starlight-ng/.nojekyll
+          cp dist/starlight-ng/index.html dist/starlight-ng/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: starlight-ng/dist/starlight-ng
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

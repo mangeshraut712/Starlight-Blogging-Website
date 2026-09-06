@@ -8,7 +8,7 @@ A modern blogging platform inspired by Medium, built with Angular and Flask. Wri
   <img src="starlight-ng/src/assets/img/starlight-logo.svg" alt="StarLight Logo" width="120">
 </div>
 
-**Live app:** [starlight-blog.vercel.app](https://starlight-blog.vercel.app)  
+**Live app:** [mangeshraut712.github.io/Starlight-Blogging-Website](https://mangeshraut712.github.io/Starlight-Blogging-Website/)  
 **API:** [starlight-api-njt0.onrender.com](https://starlight-api-njt0.onrender.com)
 
 ---
@@ -108,7 +108,7 @@ Frontend runs at **http://localhost:4200** and proxies `/api` to the backend via
 
 ```
 Starlight-Blogging-Website/
-├── .github/workflows/          # CI (build, typecheck, backend tests)
+├── .github/workflows/          # CI and GitHub Pages deploy
 ├── docs/                         # Project documentation
 ├── starlight-backend/          # Flask API
 │   ├── app.py                  # Routes, auth, rate limits
@@ -126,7 +126,6 @@ Starlight-Blogging-Website/
 │   │   ├── pages/              # homepage, explore, post-detail, author, search, …
 │   │   ├── services/           # auth, post, user, theme, meta
 │   │   └── utils/api-url.ts    # Production-safe API base URL
-│   ├── vercel.json             # SPA rewrites + /api proxy to Render
 │   └── angular.json
 ├── render.yaml                 # Render blueprint (API + Postgres)
 └── README.md
@@ -138,12 +137,12 @@ Starlight-Blogging-Website/
 
 ```mermaid
 flowchart LR
-    Browser["Browser"] --> Vercel["Vercel (Angular SPA)"]
-    Vercel -->|"same-origin /api/*"| Render["Render (Flask API)"]
+    Browser["Browser"] --> Pages["GitHub Pages (Angular SPA)"]
+    Pages -->|"CORS /api/*"| Render["Render (Flask API)"]
     Render --> DB["PostgreSQL / SQLite"]
 ```
 
-In production, the Vercel frontend rewrites `/api/*` to the Render backend so session cookies work same-origin. In development, the Angular dev server proxies to `localhost:8080`.
+In production, GitHub Pages hosts the static Angular build (base path `/Starlight-Blogging-Website/`) and the app calls the Render API directly. In development, the Angular dev server proxies to `localhost:8080`.
 
 ---
 
@@ -154,7 +153,7 @@ In production, the Vercel frontend rewrites `/api/*` to the Render backend so se
 | **Frontend** | Angular 15, TypeScript, RxJS, Bootstrap 5, Angular Material (dialogs/snackbar), TinyMCE (self-hosted) |
 | **Backend** | Flask 3, SQLAlchemy, Flask-Migrate, Flask-Limiter, Bleach, Gunicorn |
 | **Database** | PostgreSQL (Render production), SQLite (local dev) |
-| **Deploy** | Vercel (frontend), Render (API), GitHub Actions (CI) |
+| **Deploy** | GitHub Pages (frontend), Render (API), GitHub Actions (CI) |
 
 ---
 
@@ -167,7 +166,8 @@ In production, the Vercel frontend rewrites `/api/*` to the Render backend so se
 | `SECRET_KEY` | Flask session signing key (**required in production**) |
 | `DATABASE_URL` | `sqlite:///starlight.db` locally; Postgres URL on Render |
 | `FLASK_ENV` | `development` or `production` |
-| `ALLOWED_ORIGINS` | Comma-separated CORS origins (e.g. `http://localhost:4200`) |
+| `ALLOWED_ORIGINS` | Comma-separated CORS origins (e.g. `http://localhost:4200,https://mangeshraut712.github.io`) |
+| `SITE_URL` | Public frontend origin used in RSS links |
 | `PORT` | Server port (default `8080`) |
 | `RUN_SCHEMA_PATCH` | Set to `false` to skip runtime schema patches (default `true`) |
 
@@ -176,7 +176,7 @@ In production, the Vercel frontend rewrites `/api/*` to the Render backend so se
 | File | `apiUrl` | Purpose |
 |------|----------|---------|
 | `environment.ts` | `http://localhost:8080` | Local dev |
-| `environment.prod.ts` | `''` (empty) | Production — uses same-origin `/api` via Vercel proxy |
+| `environment.prod.ts` | Render API origin | Production — GitHub Pages cannot proxy `/api` |
 
 ---
 
@@ -225,14 +225,11 @@ In production, the Vercel frontend rewrites `/api/*` to the Render backend so se
 
 ## Deployment
 
-### Frontend (Vercel)
+### Frontend (GitHub Pages)
 
-The `starlight-ng/` directory is deployed to Vercel. `vercel.json` rewrites `/api/*` to the Render backend.
+GitHub Pages is enabled with `build_type=workflow`. On each push to `main`, `.github/workflows/deploy.yml` builds the Angular app with base href `/Starlight-Blogging-Website/` and publishes the `dist` output.
 
-```bash
-cd starlight-ng
-npx vercel --prod
-```
+Live URL: https://mangeshraut712.github.io/Starlight-Blogging-Website/
 
 ### Backend (Render)
 
@@ -248,7 +245,7 @@ render deploys create <service-id> --confirm
 
 On every push to `main` / `develop` and on PRs:
 
-- **Frontend:** `npm ci` → production build → `tsc --noEmit`
+- **Frontend:** `npm ci` → production build (base path `/Starlight-Blogging-Website/`) → `tsc --noEmit`
 - **Backend:** venv → `pip install` → Flask import check → `pytest` → syntax check
 
 ---
@@ -276,7 +273,7 @@ pytest tests/ -q                       # Run tests
 
 ### Explore shows no posts in production
 
-Ensure the frontend uses an empty `apiUrl` in `environment.prod.ts` and that Vercel rewrites `/api` to Render. Requests must **not** go to `localhost:8080`.
+Ensure the frontend uses the Render API origin in `environment.prod.ts`. Requests must **not** go to `localhost:8080`.
 
 ### CORS / session issues locally
 
@@ -300,7 +297,7 @@ Ensure the frontend uses an empty `apiUrl` in `environment.prod.ts` and that Ver
 - [x] Slug URLs, author profiles, bookmarks, follows
 - [x] Search, RSS, trending, platform stats
 - [x] GitHub Actions CI
-- [x] Vercel + Render deployment
+- [x] GitHub Pages + Render deployment
 - [ ] Email delivery for password reset
 - [ ] Draft / publish workflow
 - [ ] Cover image upload (S3 / Cloudinary)
@@ -330,7 +327,7 @@ MIT License — see repository for details.
 
 <div align="center">
 
-**[Visit StarLight](https://starlight-blog.vercel.app)** · [GitHub](https://github.com/mangeshraut712/Starlight-Blogging-Website)
+**[Visit StarLight](https://mangeshraut712.github.io/Starlight-Blogging-Website/)** · [GitHub](https://github.com/mangeshraut712/Starlight-Blogging-Website)
 
 Built with care for writers who want reach.
 
