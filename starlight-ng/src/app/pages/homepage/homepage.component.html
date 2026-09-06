@@ -15,7 +15,7 @@
         <i class="bi bi-compass"></i> Explore Stories
       </button>
     </div>
-    <div class="hero-stats" *ngIf="!isLoading">
+    <div class="hero-stats" *ngIf="!isLoading && hasPlatformActivity()">
       <div class="stat"><strong>{{ stats.writers }}</strong><span>Writers</span></div>
       <div class="stat"><strong>{{ stats.posts }}</strong><span>Stories</span></div>
       <div class="stat"><strong>{{ stats.communities }}</strong><span>Topics</span></div>

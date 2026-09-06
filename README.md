@@ -11,6 +11,18 @@ A modern blogging platform inspired by Medium, built with Angular and Flask. Wri
 **Live app:** [mangeshraut712.github.io/Starlight-Blogging-Website](https://mangeshraut712.github.io/Starlight-Blogging-Website/)  
 **API:** [starlight-api-njt0.onrender.com](https://starlight-api-njt0.onrender.com)
 
+<p align="center">
+  <img src="docs/screenshots/01-home.png" alt="StarLight homepage — hero, publishing CTAs, and platform features" width="900">
+  <br>
+  <em>Homepage — publishing hero, start-writing / explore CTAs, and product features</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/02-feature.png" alt="StarLight Communities — topic cards with sort and filter controls" width="900">
+  <br>
+  <em>Communities — topic discovery with sort, filters, and community cards</em>
+</p>
+
 ---
 
 ## Features
@@ -43,22 +55,6 @@ A modern blogging platform inspired by Medium, built with Angular and Flask. Wri
 - Rate limiting on auth and search endpoints
 - CORS allowlist for production origins
 - GitHub Actions CI (frontend build, TypeScript check, backend tests)
-
----
-
-## Screenshots
-
-<p align="center">
-  <img width="1512" height="858" alt="StarLight Homepage" src="https://github.com/user-attachments/assets/8bd3621d-7115-4963-94d0-932e5ea1ec2d" />
-  <br>
-  <em>Homepage — landing page with platform stats and trending stories</em>
-</p>
-
-<p align="center">
-  <img width="1512" height="853" alt="StarLight Explore" src="https://github.com/user-attachments/assets/9892d4d5-d900-4902-9c01-2ca53ed46c40" />
-  <br>
-  <em>Explore — paginated feed with sort controls and post cards</em>
-</p>
 
 ---
 

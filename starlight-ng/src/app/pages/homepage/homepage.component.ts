@@ -38,4 +38,8 @@ export class HomepageComponent implements OnInit {
   exploreStories(): void {
     this.router.navigate(['/explore']);
   }
+
+  hasPlatformActivity(): boolean {
+    return this.stats.writers > 0 || this.stats.posts > 0 || this.stats.comments > 0;
+  }
 }
