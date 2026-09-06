@@ -38,6 +38,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/Starlight-Blogging-Website/",
               "budgets": [
                 {
                   "type": "initial",
