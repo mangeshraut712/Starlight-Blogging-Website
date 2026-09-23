@@ -10,6 +10,18 @@ import { UserService } from 'src/app/services/user.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { MetaService } from 'src/app/services/meta.service';
 
+function stripTags(value: string): string {
+  let out = "";
+  let inTag = false;
+  for (const ch of value) {
+    if (ch === "<") inTag = true;
+    else if (ch === ">") inTag = false;
+    else if (!inTag) out += ch;
+  }
+  return out;
+}
+
+
 @Component({
   selector: 'app-post-detail',
   templateUrl: './post-detail.component.html',
@@ -110,7 +122,7 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   }
 
   getReadingTime(): number {
-    const text = (this.post.content || '').replace(/<[^>]*>/g, '');
+    const text = stripTags(this.post.content || '');
     const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
     return Math.max(1, Math.ceil(words / 200));
   }

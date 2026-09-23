@@ -7,6 +7,18 @@ import { DataService } from 'src/app/services/data.service';
 import { PostService } from 'src/app/services/post.service';
 import { UserService } from 'src/app/services/user.service';
 
+function stripTags(value: string): string {
+  let out = "";
+  let inTag = false;
+  for (const ch of value) {
+    if (ch === "<") inTag = true;
+    else if (ch === ">") inTag = false;
+    else if (!inTag) out += ch;
+  }
+  return out;
+}
+
+
 @Component({
   selector: 'app-new-post',
   templateUrl: './new-post.component.html',
@@ -148,7 +160,7 @@ export class NewPostComponent implements OnInit {
     }
 
     // Check if content is just HTML tags without actual text
-    const textContent = this.newPost.content.replace(/<[^>]*>/g, '').trim();
+    const textContent = stripTags(this.newPost.content).trim();
     if (textContent === '') {
       this.errorMessage = 'Please enter actual content for your post.';
       return false;

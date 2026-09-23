@@ -1,3 +1,16 @@
+
+def _strip_tags(html_content: str) -> str:
+    out = []
+    in_tag = False
+    for ch in html_content or "":
+        if ch == "<":
+            in_tag = True
+        elif ch == ">":
+            in_tag = False
+        elif not in_tag:
+            out.append(ch)
+    return "".join(out)
+
 import re
 import unicodedata
 
@@ -16,7 +29,7 @@ def make_unique_slug(title: str, post_id: int = None) -> str:
 
 
 def make_excerpt(html_content: str, length: int = 160) -> str:
-    text = re.sub(r'<[^>]+>', '', html_content or '')
+    text = _strip_tags(html_content)
     text = re.sub(r'\s+', ' ', text).strip()
     if len(text) <= length:
         return text

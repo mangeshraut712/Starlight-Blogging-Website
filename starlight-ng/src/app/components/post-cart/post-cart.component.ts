@@ -9,6 +9,18 @@ import { UserService } from 'src/app/services/user.service';
 import { PostService } from 'src/app/services/post.service';
 import { AuthService } from 'src/app/services/auth.service';
 
+function stripTags(value: string): string {
+  let out = "";
+  let inTag = false;
+  for (const ch of value) {
+    if (ch === "<") inTag = true;
+    else if (ch === ">") inTag = false;
+    else if (!inTag) out += ch;
+  }
+  return out;
+}
+
+
 @Component({
   selector: 'app-post-cart',
   templateUrl: './post-cart.component.html',
@@ -79,7 +91,7 @@ export class PostCartComponent {
 
   getExcerpt(): string {
     if (this.currentPost.excerpt) return this.currentPost.excerpt;
-    const text = (this.currentPost.content || '').replace(/<[^>]*>/g, '');
+    const text = stripTags(this.currentPost.content || '');
     return text.length > 180 ? text.slice(0, 180) + '...' : text;
   }
 
@@ -173,7 +185,7 @@ export class PostCartComponent {
   }
 
   getReadingTime(): number {
-    const text = (this.currentPost?.content || '').replace(/<[^>]*>/g, '');
+    const text = stripTags(this.currentPost?.content || '');
     const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
     return Math.max(1, Math.ceil(words / 200));
   }

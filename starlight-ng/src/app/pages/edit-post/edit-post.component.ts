@@ -5,6 +5,18 @@ import { AuthService } from 'src/app/services/auth.service';
 import { DataService } from 'src/app/services/data.service';
 import { PostService } from 'src/app/services/post.service';
 
+function stripTags(value: string): string {
+  let out = "";
+  let inTag = false;
+  for (const ch of value) {
+    if (ch === "<") inTag = true;
+    else if (ch === ">") inTag = false;
+    else if (!inTag) out += ch;
+  }
+  return out;
+}
+
+
 @Component({
   selector: 'app-edit-post',
   templateUrl: './edit-post.component.html',
@@ -106,7 +118,7 @@ export class EditPostComponent implements OnInit {
       this.errorMessage = 'Please enter content.';
       return false;
     }
-    const textContent = this.post.content.replace(/<[^>]*>/g, '').trim();
+    const textContent = stripTags(this.post.content).trim();
     if (!textContent) {
       this.errorMessage = 'Please enter actual content.';
       return false;
