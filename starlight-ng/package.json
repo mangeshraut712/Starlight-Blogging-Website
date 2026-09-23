@@ -18,20 +18,20 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^15.0.0",
-    "@angular/cdk": "^15.2.1",
-    "@angular/common": "^15.0.0",
-    "@angular/compiler": "^15.0.0",
-    "@angular/core": "^15.0.0",
-    "@angular/forms": "^15.0.0",
-    "@angular/material": "^15.2.1",
-    "@angular/platform-browser": "^15.0.0",
-    "@angular/platform-browser-dynamic": "^15.0.0",
-    "@angular/router": "^15.0.0",
-    "@coreui/angular": "^4.3.11",
-    "@coreui/coreui": "^4.2.6",
-    "@coreui/icons": "^3.0.0",
-    "@coreui/icons-angular": "^4.3.16",
+    "@angular/animations": "~15.2.10",
+    "@angular/cdk": "~15.2.9",
+    "@angular/common": "~15.2.10",
+    "@angular/compiler": "~15.2.10",
+    "@angular/core": "~15.2.10",
+    "@angular/forms": "~15.2.10",
+    "@angular/material": "~15.2.9",
+    "@angular/platform-browser": "~15.2.10",
+    "@angular/platform-browser-dynamic": "~15.2.10",
+    "@angular/router": "~15.2.10",
+    "@coreui/angular": "4.3.11",
+    "@coreui/coreui": "~4.2.6",
+    "@coreui/icons": "~3.0.0",
+    "@coreui/icons-angular": "4.3.16",
     "@tinymce/tinymce-angular": "^7.0.0",
     "bootstrap": "^5.2.3",
     "bootstrap-icons": "^1.10.3",
@@ -42,10 +42,11 @@
     "zone.js": "~0.12.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^21.2.24",
-    "@angular/cli": "~22.1.8",
-    "@angular/compiler-cli": "^15.0.0",
+    "@angular-devkit/build-angular": "~15.2.11",
+    "@angular/cli": "~15.2.11",
+    "@angular/compiler-cli": "~15.2.10",
     "@types/jasmine": "~4.3.0",
+    "@types/node": "~18.19.130",
     "enhanced-resolve": "^3.3.0",
     "jasmine-core": "~4.5.0",
     "karma": "~6.4.0",
@@ -58,5 +59,13 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "overrides": {
+    "tmp": "0.2.7",
+    "follow-redirects": "1.16.0",
+    "ws": "8.21.3",
+    "socket.io-adapter": "2.5.8",
+    "brace-expansion": "1.1.21",
+    "tar": "6.2.1"
   }
 }
