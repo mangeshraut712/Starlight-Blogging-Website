@@ -66,6 +66,7 @@
     "ws": "8.21.3",
     "socket.io-adapter": "2.5.8",
     "brace-expansion": "1.1.21",
-    "tar": "6.2.1"
+    "tar": "6.2.1",
+    "tinymce": "7.9.3"
   }
 }
