@@ -67,6 +67,9 @@
     "socket.io-adapter": "2.5.8",
     "brace-expansion": "1.1.21",
     "tar": "6.2.1",
-    "tinymce": "7.9.3"
+    "tinymce": "7.9.3",
+    "browserslist": "4.29.0",
+    "postcss": "8.5.28",
+    "webpack": "5.94.0"
   }
 }
