@@ -11,17 +11,21 @@ A modern blogging platform inspired by Medium, built with Angular and Flask. Wri
 **Live app:** [mangeshraut712.github.io/Starlight-Blogging-Website](https://mangeshraut712.github.io/Starlight-Blogging-Website/)  
 **API:** [starlight-api-njt0.onrender.com](https://starlight-api-njt0.onrender.com)
 
-<p align="center">
-  <img src="docs/screenshots/01-home.png" alt="StarLight homepage — hero, publishing CTAs, and platform features" width="900">
-  <br>
-  <em>Homepage — publishing hero, start-writing / explore CTAs, and product features</em>
-</p>
+## Screenshots
 
-<p align="center">
-  <img src="docs/screenshots/02-feature.png" alt="StarLight Communities — topic cards with sort and filter controls" width="900">
-  <br>
-  <em>Communities — topic discovery with sort, filters, and community cards</em>
-</p>
+Framed captures of the live app (current UI).
+
+<div align="center">
+
+<img src="docs/screenshots/01-home.webp" alt="StarLight home: every story gets readers" width="720" />
+
+<img src="docs/screenshots/02-communities.webp" alt="StarLight communities: topics, sorted" width="720" />
+
+<img src="docs/screenshots/03-login.webp" alt="StarLight sign-in: sign in, keep writing" width="720" />
+
+<img src="docs/screenshots/04-explore.webp" alt="StarLight explore empty feed: be first to publish" width="720" />
+
+</div>
 
 ---
 
