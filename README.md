@@ -66,7 +66,7 @@ Framed captures of the live app (current UI).
 
 ### Prerequisites
 
-- Node.js 18+ (20 recommended)
+- Node.js 22.22+ or 24 (24 recommended)
 - Python 3.11+
 - npm and pip
 
@@ -120,7 +120,7 @@ Starlight-Blogging-Website/
 │   ├── migrations/             # Alembic migrations
 │   ├── requirements.txt
 │   └── Procfile                # Gunicorn for Render
-├── starlight-ng/               # Angular 15 frontend
+├── starlight-ng/               # Angular 22 frontend
 │   ├── src/app/
 │   │   ├── components/         # navbar, post-cart, pop-up
 │   │   ├── pages/              # homepage, explore, post-detail, author, search, …
@@ -150,7 +150,7 @@ In production, GitHub Pages hosts the static Angular build (base path `/Starligh
 
 | Layer | Technologies |
 |-------|----------------|
-| **Frontend** | Angular 15, TypeScript, RxJS, Bootstrap 5, Angular Material (dialogs/snackbar), TinyMCE (self-hosted) |
+| **Frontend** | Angular 22, TypeScript, RxJS, Bootstrap 5, Angular Material (dialogs/snackbar), TinyMCE (self-hosted) |
 | **Backend** | Flask 3, SQLAlchemy, Flask-Migrate, Flask-Limiter, Bleach, Gunicorn |
 | **Database** | PostgreSQL (Render production), SQLite (local dev) |
 | **Deploy** | GitHub Pages (frontend), Render (API), GitHub Actions (CI) |

@@ -4,6 +4,7 @@ import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-change-password',
+  standalone: false,
   templateUrl: './change-password.component.html',
   styleUrls: ['./change-password.component.css']
 })

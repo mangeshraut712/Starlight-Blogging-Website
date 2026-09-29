@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-bookmarks',
+  standalone: false,
   templateUrl: './bookmarks.component.html',
   styleUrls: ['./bookmarks.component.css']
 })

@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-registration',
+  standalone: false,
   templateUrl: './registration.component.html',
   styleUrls: ['./registration.component.css']
 })

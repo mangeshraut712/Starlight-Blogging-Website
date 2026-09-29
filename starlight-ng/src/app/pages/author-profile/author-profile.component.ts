@@ -8,6 +8,7 @@ import { MetaService } from 'src/app/services/meta.service';
 
 @Component({
   selector: 'app-author-profile',
+  standalone: false,
   templateUrl: './author-profile.component.html',
   styleUrls: ['./author-profile.component.css']
 })

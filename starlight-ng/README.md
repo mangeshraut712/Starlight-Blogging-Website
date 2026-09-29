@@ -1,6 +1,6 @@
 # StarLight Frontend
 
-Angular 15 application for the StarLight blogging platform.
+Angular 22 application for the StarLight blogging platform.
 
 See the [main README](../README.md) for full setup, deployment, and API documentation.
 

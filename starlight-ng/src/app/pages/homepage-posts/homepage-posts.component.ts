@@ -6,6 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-homepage-posts',
+  standalone: false,
   templateUrl: './homepage-posts.component.html',
   styleUrls: ['./homepage-posts.component.css']
 })

@@ -23,6 +23,7 @@ function stripTags(value: string): string {
 
 @Component({
   selector: 'app-post-cart',
+  standalone: false,
   templateUrl: './post-cart.component.html',
   styleUrls: ['./post-cart.component.css']
 })
