@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
+  standalone: false,
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })

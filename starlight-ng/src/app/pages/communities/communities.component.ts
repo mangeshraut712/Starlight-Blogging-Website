@@ -11,6 +11,7 @@ interface CommunityWithStats {
 
 @Component({
   selector: 'app-communities',
+  standalone: false,
   templateUrl: './communities.component.html',
   styleUrls: ['./communities.component.css']
 })
@@ -62,7 +63,7 @@ export class CommunitiesComponent {
       (error) => {
         console.error('Error loading posts for communities:', error);
         // Fallback to basic list
-        this.communities = this.dataService.communityList.map(name => ({
+        this.communities = this.dataService.communityList.map((name): CommunityWithStats => ({
           name,
           postCount: 0,
           latestPostDate: null

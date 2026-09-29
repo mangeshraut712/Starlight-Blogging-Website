@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { ToastModule } from '@coreui/angular';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { EditorModule } from '@tinymce/tinymce-angular';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -63,7 +62,6 @@ import { DataService } from './services/data.service';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    ToastModule,
     BrowserAnimationsModule,
     MatSnackBarModule,
     EditorModule,

@@ -6,6 +6,7 @@ import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'app-search',
+  standalone: false,
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.css']
 })

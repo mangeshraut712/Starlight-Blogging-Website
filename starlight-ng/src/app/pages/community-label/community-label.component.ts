@@ -6,6 +6,7 @@ import { PostService } from 'src/app/services/post.service';
 
 @Component({
   selector: 'app-community-label',
+  standalone: false,
   templateUrl: './community-label.component.html',
   styleUrls: ['./community-label.component.css']
 })

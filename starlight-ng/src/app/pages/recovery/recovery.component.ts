@@ -4,6 +4,7 @@ import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-recovery',
+  standalone: false,
   templateUrl: './recovery.component.html',
   styleUrls: ['./recovery.component.css']
 })

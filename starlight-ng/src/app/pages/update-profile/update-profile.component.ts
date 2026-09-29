@@ -9,6 +9,7 @@ import { UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-update-profile',
+  standalone: false,
   templateUrl: './update-profile.component.html',
   styleUrls: ['./update-profile.component.css']
 })

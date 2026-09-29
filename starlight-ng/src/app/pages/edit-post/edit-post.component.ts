@@ -19,6 +19,7 @@ function stripTags(value: string): string {
 
 @Component({
   selector: 'app-edit-post',
+  standalone: false,
   templateUrl: './edit-post.component.html',
   styleUrls: ['./edit-post.component.css']
 })

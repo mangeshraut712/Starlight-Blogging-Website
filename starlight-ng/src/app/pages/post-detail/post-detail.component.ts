@@ -24,6 +24,7 @@ function stripTags(value: string): string {
 
 @Component({
   selector: 'app-post-detail',
+  standalone: false,
   templateUrl: './post-detail.component.html',
   styleUrls: ['./post-detail.component.css']
 })
