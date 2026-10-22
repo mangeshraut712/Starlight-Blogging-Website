@@ -54,6 +54,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m venv .venv
+          .venv/bin/python -m pip install --upgrade 'pip>=26.2.2'
           .venv/bin/pip install -r requirements.txt pytest
 
       - name: Validate Flask app imports

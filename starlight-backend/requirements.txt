@@ -9,3 +9,5 @@ gunicorn==22.0.0
 python-dotenv==1.2.2
 psycopg2-binary==2.9.9
 bleach==6.4.0
+# emSign CA advisory: require patched CA bundle
+certifi>=2026.10.19
