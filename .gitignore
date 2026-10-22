@@ -49,3 +49,6 @@ cookies.txt
 coverage/
 .nyc_output/
 karma-coverage/
+# Local agent tooling
+.agents/
+skills-lock.json
