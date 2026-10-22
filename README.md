@@ -13,6 +13,10 @@ A modern blogging platform inspired by Medium, built with Angular and Flask. Wri
 
 ## Screenshots
 
+Unframed capture of the [live demo](https://mangeshraut712.github.io/Starlight-Blogging-Website/) home page, taken with headless Chromium on 22 October 2026:
+
+<p align="center"><img src="docs/screenshots/live-home.webp" alt="Starlight-Blogging-Website live demo home page" width="720" /></p>
+
 Framed captures of the live app (current UI).
 
 <div align="center">
