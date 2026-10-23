@@ -11,6 +11,7 @@ def migrate_schema():
         ('users', 'username', 'VARCHAR(80)'),
         ('users', 'bio', 'TEXT'),
         ('users', 'avatar_url', 'VARCHAR(500)'),
+        ('users', 'session_version', 'INTEGER NOT NULL DEFAULT 0'),
         ('posts', 'slug', 'VARCHAR(200)'),
         ('posts', 'excerpt', 'TEXT'),
         ('posts', 'cover_image', 'VARCHAR(500)'),
@@ -32,7 +33,14 @@ def backfill_data():
     for user in UserModel.query.filter((UserModel.username == None) | (UserModel.username == '')).all():
         user.username = make_username(user.email, user.first, user.last, user.id)
 
-    for post in PostModel.query.all():
+    incomplete_posts = PostModel.query.filter(
+        (PostModel.slug == None) | (PostModel.slug == '') |
+        (PostModel.excerpt == None) | (PostModel.excerpt == '') |
+        (PostModel.status == None) | (PostModel.status == '') |
+        (PostModel.view_count == None) |
+        (PostModel.updated_at == None)
+    ).all()
+    for post in incomplete_posts:
         if not post.slug:
             post.slug = make_unique_slug(post.title, post.id)
         if not post.excerpt:

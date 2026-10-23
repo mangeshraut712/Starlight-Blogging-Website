@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { safeReturnUrl } from '../../utils/app-url';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
@@ -58,7 +59,7 @@ export class LoginComponent implements OnInit {
           this.isLoading = false;
           if (response?.uid) {
             this.authService.setUid(response.uid);
-            const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/explore';
+            const returnUrl = safeReturnUrl(this.route.snapshot.queryParams['returnUrl']);
             this.router.navigateByUrl(returnUrl);
           } else {
             this.errorMessage = 'Invalid response from server';

@@ -1,4 +1,8 @@
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { CommunityLabelComponent } from './community-label.component';
 
@@ -8,7 +12,10 @@ describe('CommunityLabelComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CommunityLabelComponent ]
+      imports: [RouterTestingModule, HttpClientTestingModule],
+      declarations: [ CommunityLabelComponent ],
+      providers: [DatePipe],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA]
     })
     .compileComponents();
 

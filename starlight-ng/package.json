@@ -12,7 +12,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
-    "lint": "ng lint",
+    "lint": "tsc -p tsconfig.app.json --noEmit",
     "e2e": "ng e2e",
     "heroku-postbuild": "ng build --configuration production"
   },
@@ -46,6 +46,9 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "vite": "8.3.5"
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0",

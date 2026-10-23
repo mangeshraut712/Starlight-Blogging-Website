@@ -28,20 +28,20 @@
 
   <div class="card-footer">
     <div class="card-stats">
-      <button type="button" class="stat-btn" (click)="toggleLike(); $event.preventDefault()" [class.active]="isLiked">
+      <button type="button" class="stat-btn" (click)="toggleLike(); $event.preventDefault()" [class.active]="isLiked" [attr.aria-label]="isLiked ? 'Unlike post' : 'Like post'">
         <i class="bi" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
         {{ currentPost.likes || 0 }}
       </button>
-      <button type="button" class="stat-btn" (click)="showComments(); $event.preventDefault()">
-        <i class="bi bi-chat"></i> {{ comments.length }}
+      <button type="button" class="stat-btn" (click)="showComments(); $event.preventDefault()" [attr.aria-expanded]="seeComments" aria-label="Show comments">
+        <i class="bi bi-chat"></i> {{ displayCommentCount }}
       </button>
-      <button type="button" class="stat-btn" (click)="sharePost(); $event.preventDefault()">
+      <button type="button" class="stat-btn" (click)="sharePost(); $event.preventDefault()" aria-label="Copy link to post">
         <i class="bi bi-share"></i>
       </button>
     </div>
     <div class="card-actions" *ngIf="isOwnPost()">
-      <button type="button" class="action-icon" (click)="editPost()" title="Edit"><i class="bi bi-pencil"></i></button>
-      <button type="button" class="action-icon danger" (click)="deletePost(currentPost)" title="Delete"><i class="bi bi-trash"></i></button>
+      <button type="button" class="action-icon" (click)="editPost()" aria-label="Edit post"><i class="bi bi-pencil"></i></button>
+      <button type="button" class="action-icon danger" (click)="deletePost(currentPost)" aria-label="Delete post"><i class="bi bi-trash"></i></button>
     </div>
   </div>
 </article>
@@ -50,7 +50,8 @@
   <div class="comment-section">
     <div class="comment-box" *ngIf="authService.isLoggedIn()">
       <form (ngSubmit)="submitComment()">
-        <textarea [(ngModel)]="newComment.body" name="body" class="comment-input" placeholder="Write a response..." rows="2"></textarea>
+        <label class="visually-hidden" [attr.for]="'card-comment-' + currentPost.id">Write a response</label>
+        <textarea [id]="'card-comment-' + currentPost.id" [(ngModel)]="newComment.body" name="body" class="comment-input" placeholder="Write a response..." rows="2"></textarea>
         <button class="btn btn-success submit-comment" type="submit" [disabled]="!newComment.body?.trim()">Respond</button>
       </form>
     </div>
@@ -66,7 +67,8 @@
         <div class="comment-content">
           <div class="comment-post" *ngIf="editingCommentId !== comment.id">{{ comment.body }}</div>
           <div class="edit-comment-section" *ngIf="editingCommentId === comment.id">
-            <textarea [(ngModel)]="editingCommentText" class="edit-comment-input" rows="2"></textarea>
+            <label class="visually-hidden" for="edit-comment-{{comment.id}}">Edit comment</label>
+            <textarea [id]="'edit-comment-' + comment.id" [(ngModel)]="editingCommentText" class="edit-comment-input" rows="2"></textarea>
             <div class="edit-actions">
               <button class="btn btn-success btn-sm me-2" (click)="saveCommentEdit(comment)">Save</button>
               <button class="btn btn-outline-secondary btn-sm" (click)="cancelEdit()">Cancel</button>
@@ -74,8 +76,8 @@
           </div>
         </div>
         <div class="comment-actions" *ngIf="isOwnComment(comment)">
-          <button class="btn btn-sm btn-outline-primary me-2" *ngIf="editingCommentId !== comment.id" (click)="editComment(comment)"><i class="bi bi-pencil"></i></button>
-          <button class="btn btn-sm btn-outline-danger" (click)="deleteComment(comment)"><i class="bi bi-trash"></i></button>
+          <button type="button" class="btn btn-sm btn-outline-primary me-2" *ngIf="editingCommentId !== comment.id" (click)="editComment(comment)" aria-label="Edit comment"><i class="bi bi-pencil"></i></button>
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteComment(comment)" aria-label="Delete comment"><i class="bi bi-trash"></i></button>
         </div>
       </div>
     </div>

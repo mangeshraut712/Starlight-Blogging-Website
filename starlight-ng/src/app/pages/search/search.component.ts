@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Post } from 'src/app/models/post';
 import { PostService } from 'src/app/services/post.service';
 import { DataService } from 'src/app/services/data.service';
+import { MetaService } from 'src/app/services/meta.service';
 
 @Component({
   selector: 'app-search',
@@ -10,7 +11,7 @@ import { DataService } from 'src/app/services/data.service';
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.css']
 })
-export class SearchComponent implements OnInit {
+export class SearchComponent implements OnInit, OnDestroy {
   query = '';
   labelFilter = '';
   communityList: string[] = [];
@@ -23,7 +24,8 @@ export class SearchComponent implements OnInit {
     private postService: PostService,
     private dataService: DataService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private metaService: MetaService
   ) {
     this.communityList = this.dataService.communityList;
   }
@@ -33,18 +35,19 @@ export class SearchComponent implements OnInit {
       this.query = params['q'] || '';
       this.labelFilter = params['label'] || '';
       if (this.query || this.labelFilter) {
-        this.search();
+        this.runSearch();
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.metaService.resetMeta();
   }
 
   search(): void {
     if (!this.query.trim() && !this.labelFilter) {
       return;
     }
-
-    this.isLoading = true;
-    this.hasSearched = true;
 
     this.router.navigate([], {
       relativeTo: this.route,
@@ -54,6 +57,16 @@ export class SearchComponent implements OnInit {
       },
       queryParamsHandling: 'merge',
       replaceUrl: true
+    });
+  }
+
+  private runSearch(): void {
+    this.isLoading = true;
+    this.hasSearched = true;
+    this.metaService.setPageMeta({
+      title: this.query ? `Search: ${this.query}` : 'Search',
+      description: 'Find stories on StarLight',
+      type: 'website'
     });
 
     this.postService.searchPosts(this.query.trim(), this.labelFilter).subscribe({

@@ -4,6 +4,7 @@ import { Post } from 'src/app/models/post';
 import { AuthService } from 'src/app/services/auth.service';
 import { DataService } from 'src/app/services/data.service';
 import { PostService } from 'src/app/services/post.service';
+import { tinymceBaseUrl } from 'src/app/utils/app-url';
 
 function stripTags(value: string): string {
   let out = "";
@@ -32,7 +33,7 @@ export class EditPostComponent implements OnInit {
   isSaving = false;
 
   editorConfig = {
-    base_url: '/tinymce',
+    base_url: tinymceBaseUrl(),
     suffix: '.min',
     license_key: 'gpl',
     plugins: 'lists link table code help wordcount',

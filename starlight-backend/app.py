@@ -1,6 +1,7 @@
 # app.py
 import os
 import html
+import re
 import datetime
 import flask
 from dotenv import load_dotenv
@@ -11,10 +12,12 @@ from flask_limiter.util import get_remote_address
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from models import db, login, UserModel, PostModel, Like, Comment, Bookmark, Follow
 from flask_migrate import Migrate
-from sqlalchemy import or_, func, desc, text
-from utils import make_unique_slug, make_excerpt, make_username
+from sqlalchemy import event, or_, func, desc, text
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
+from utils import make_unique_slug, make_excerpt, make_username, escape_like, cdata_safe
 from schema_migrate import migrate_schema, backfill_data
-from sanitize import sanitize_html
+from sanitize import sanitize_html, strip_html
 
 load_dotenv()
 
@@ -34,17 +37,23 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.permanent_session_lifetime = datetime.timedelta(hours=24)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+# Cross-origin GitHub Pages → Render API needs SameSite=None; local dev stays Lax.
+app.config['SESSION_COOKIE_SAMESITE'] = 'None' if is_production else 'Lax'
 if is_production:
     app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    # Cross-origin GitHub Pages → Render API needs SameSite=None
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 
 site_url = os.environ.get(
     'SITE_URL',
     'https://mangeshraut712.github.io/Starlight-Blogging-Website'
 ).rstrip('/')
-allowed_origins = [o.strip() for o in os.environ.get('ALLOWED_ORIGINS', '*').split(',') if o.strip()]
+# Wildcard origins plus credentialed cookies let any site ride the session.
+_default_origins = 'http://localhost:4200,http://127.0.0.1:4200'
+allowed_origins = [
+    origin.strip()
+    for origin in os.environ.get('ALLOWED_ORIGINS', _default_origins).split(',')
+    if origin.strip() and origin.strip() != '*'
+]
 CORS(app,
      supports_credentials=True,
      origins=allowed_origins,
@@ -56,6 +65,15 @@ migrate = Migrate(app, db, render_as_batch=True)
 limiter = Limiter(get_remote_address, app=app, default_limits=[])
 login.init_app(app)
 # login.login_view = 'login'
+
+def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record):
+    if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite'):
+        cursor = dbapi_connection.cursor()
+        cursor.execute('PRAGMA foreign_keys=ON')
+        cursor.close()
+
+with app.app_context():
+    event.listen(db.engine, 'connect', _enable_sqlite_foreign_keys)
 
 # Create tables within app context
 with app.app_context():
@@ -70,37 +88,104 @@ def published_posts_query():
     )
 
 def paginate_query(query, page, per_page):
-    page = max(1, page)
-    per_page = min(max(1, per_page), 50)
-    total = query.count()
-    items = query.offset((page - 1) * per_page).limit(per_page).all()
+    page = max(1, page or 1)
+    per_page = min(max(1, per_page or 12), 50)
+    total = query.order_by(None).count()
+    items = (
+        query.options(joinedload(PostModel.author))
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+    posts = [p.serialize(include_content=False) for p in items]
+    _attach_liked(posts, [p.id for p in items])
     return {
-        'posts': [p.serialize(include_content=False) for p in items],
+        'posts': posts,
         'page': page,
         'per_page': per_page,
         'total': total,
         'has_more': (page * per_page) < total
     }
 
-def get_current_user_id():
-    return session.get('user_id')
+EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+USERNAME_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{0,79}$')
+MAX_CONTENT_LENGTH = 100_000
+MAX_BIO_LENGTH = 2000
+MAX_COMMENT_LENGTH = 1000
+ALLOWED_POST_STATUS = {'published', 'draft'}
 
 def get_data():
     return request.get_json(silent=True) or {}
 
 def get_current_user():
-    user_id = get_current_user_id()
+    user_id = session.get('user_id')
+    if not user_id:
+        return None
     user = UserModel.query.filter_by(id=user_id).first()
+    if user is None:
+        session.pop('user_id', None)
+        return None
+    expected = user.session_version or 0
+    if session.get('sv', 0) != expected:
+        session.pop('user_id', None)
+        session.pop('sv', None)
+        return None
     return user
+
+def get_current_user_id():
+    user = get_current_user()
+    return user.id if user else None
+
+def _start_session(user):
+    session.clear()
+    session['user_id'] = user.id
+    session['sv'] = user.session_version or 0
+    session.permanent = True
+
+def _invalidate_other_sessions(user, keep_current=False):
+    user.session_version = (user.session_version or 0) + 1
+    if keep_current:
+        session['user_id'] = user.id
+        session['sv'] = user.session_version
+
+def _password_stamp(user):
+    return (user.password_hash or '')[-12:]
+
+def _attach_liked(serialized, post_ids):
+    user_id = get_current_user_id()
+    if not user_id or not post_ids:
+        return
+    liked = {
+        row.post_id
+        for row in Like.query.filter(
+            Like.user_id == user_id,
+            Like.post_id.in_(post_ids)
+        ).all()
+    }
+    for item, post_id in zip(serialized, post_ids):
+        item['is_liked'] = post_id in liked
+
+def apply_post_sort(query, sort):
+    if sort == 'oldest':
+        return query.order_by(PostModel.created_at.asc(), PostModel.id.asc())
+    if sort in ('most_liked', 'popular'):
+        return query.order_by(desc(PostModel.likes), desc(PostModel.created_at))
+    if sort == 'least_liked':
+        return query.order_by(PostModel.likes.asc(), desc(PostModel.created_at))
+    if sort == 'alphabetical':
+        return query.order_by(PostModel.title.asc(), desc(PostModel.created_at))
+    if sort == 'trending':
+        return query.order_by(desc(PostModel.likes + PostModel.view_count), desc(PostModel.created_at))
+    return query.order_by(desc(PostModel.created_at), desc(PostModel.id))
 
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
         response = flask.make_response()
         origin = request.headers.get('Origin')
-        if origin and ('*' in allowed_origins or origin in allowed_origins):
+        if origin and origin in allowed_origins:
             response.headers.add("Access-Control-Allow-Origin", origin)
-        response.headers.add("Access-Control-Allow-Credentials", "true")
+            response.headers.add("Access-Control-Allow-Credentials", "true")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
         response.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
         return response
@@ -147,6 +232,8 @@ def search_posts():
 
     if not query and not label:
         return jsonify({'error': 'Search query or label filter required'}), 400
+    if len(query) > 200:
+        return jsonify({'error': 'Search query is too long'}), 400
 
     posts_query = published_posts_query()
 
@@ -154,22 +241,27 @@ def search_posts():
         posts_query = posts_query.filter_by(label=label)
 
     if query:
-        search_term = f'%{query}%'
+        search_term = f'%{escape_like(query)}%'
         posts_query = posts_query.filter(
             or_(
-                PostModel.title.ilike(search_term),
-                PostModel.content.ilike(search_term),
-                PostModel.author_name.ilike(search_term),
-                PostModel.label.ilike(search_term)
+                PostModel.title.ilike(search_term, escape='\\'),
+                PostModel.content.ilike(search_term, escape='\\'),
+                PostModel.author_name.ilike(search_term, escape='\\'),
+                PostModel.label.ilike(search_term, escape='\\')
             )
         )
 
-    posts = posts_query.all()
-    post_list = [post.serialize() for post in posts]
-    sorted_posts = sorted(post_list, key=lambda x: x['created_at'], reverse=True)
+    posts = (
+        posts_query.options(joinedload(PostModel.author))
+        .order_by(desc(PostModel.created_at), desc(PostModel.id))
+        .limit(50)
+        .all()
+    )
+    results = [post.serialize(include_content=False) for post in posts]
+    _attach_liked(results, [post.id for post in posts])
     return jsonify({
-        'results': sorted_posts,
-        'count': len(sorted_posts),
+        'results': results,
+        'count': len(results),
         'query': query,
         'label': label
     })
@@ -183,7 +275,7 @@ def login():
     password = data.get('password', '')
     user = UserModel.query.filter_by(email=email).first()
     if user and user.check_password(password):
-        session['user_id'] = user.id
+        _start_session(user)
         uid = str(user.id)
         return jsonify({'user': user.id, 'uid': uid, 'message': 'Login successful'}), 200
     else:
@@ -194,26 +286,33 @@ def login():
 @limiter.limit('5 per minute')
 def register():
     data = get_data()
-    email = data['email'].lower().strip()
-    password = data['password']
-    first = data['first']
-    last = data['last']
+    email = str(data.get('email') or '').lower().strip()
+    password = data.get('password') or ''
+    first = str(data.get('first') or '').strip()
+    last = str(data.get('last') or '').strip()
+
+    if not EMAIL_RE.match(email) or len(email) > 80:
+        return jsonify({'error': 'A valid email is required'}), 400
+    if not isinstance(password, str) or len(password) < 8 or len(password) > 128:
+        return jsonify({'error': 'Password must be at least 8 characters'}), 400
+    if len(first) < 2 or len(first) > 100 or len(last) < 2 or len(last) > 100:
+        return jsonify({'error': 'First and last name must be 2-100 characters'}), 400
+
     user = UserModel.query.filter_by(email=email).first()
     if user:
-        return jsonify({'error': 'This email belongs to an already existing user'}), 401
-    else:
-        new_user = UserModel(email=email, first=first, last=last)
-        new_user.set_password(password)
-        db.session.add(new_user)
-        db.session.flush()
-        new_user.username = make_username(email, first, last, new_user.id)
-        db.session.commit()
-        session['user_id'] = new_user.id
-        return jsonify({
-            'message': 'new user registered successfully',
-            'username': new_user.username,
-            'uid': str(new_user.id)
-        }), 200
+        return jsonify({'error': 'This email belongs to an already existing user'}), 409
+    new_user = UserModel(email=email, first=first, last=last)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.flush()
+    new_user.username = make_username(email, first, last, new_user.id)
+    db.session.commit()
+    _start_session(new_user)
+    return jsonify({
+        'message': 'new user registered successfully',
+        'username': new_user.username,
+        'uid': str(new_user.id)
+    }), 200
 
 
 @app.route('/api/data')
@@ -224,9 +323,9 @@ def data():
         return jsonify({'error': 'Not authorized, user not logged in'}),404
 
 
-@app.route('/api/logout')
+@app.route('/api/logout', methods=['POST', 'OPTIONS'])
 def logout():
-    session.pop('user_id', None)
+    session.clear()
     return jsonify({'message': 'Logged out successfully'}), 200
 
 
@@ -241,7 +340,7 @@ def forgot_password():
     user = UserModel.query.filter_by(email=email).first()
     response = {'message': 'If an account exists for this email, password reset instructions have been sent.'}
     if user:
-        token = _reset_serializer().dumps({'uid': user.id})
+        token = _reset_serializer().dumps({'uid': user.id, 'pw': _password_stamp(user)})
         if not is_production:
             response['reset_token'] = token
     return jsonify(response), 200
@@ -257,7 +356,7 @@ def reset_password():
 
     if not token:
         return jsonify({'error': 'Reset token is required'}), 400
-    if not new_password or len(new_password) < 8:
+    if not isinstance(new_password, str) or len(new_password) < 8 or len(new_password) > 128:
         return jsonify({'error': 'Password must be at least 8 characters'}), 400
     if new_password != confirm_password:
         return jsonify({'error': 'Passwords do not match'}), 400
@@ -270,11 +369,12 @@ def reset_password():
     except BadSignature:
         return jsonify({'error': 'Invalid reset link'}), 400
 
-    user = UserModel.query.get(user_id)
-    if not user:
+    user = db.session.get(UserModel, user_id)
+    if not user or payload.get('pw') != _password_stamp(user):
         return jsonify({'error': 'Invalid reset link'}), 400
 
     user.set_password(new_password)
+    _invalidate_other_sessions(user, keep_current=False)
     db.session.commit()
     return jsonify({'message': 'Password updated successfully'}), 200
 
@@ -287,8 +387,7 @@ def get_current_user_info():
     user = get_current_user()
     if user:
         return jsonify(user.serialize())
-    else:
-        return jsonify({'error': 'Not authorized, user not logged in'})
+    return jsonify({'error': 'Not authorized, user not logged in'}), 401
 
 
 @app.route('/api/update-profile', methods=['PUT'])
@@ -301,25 +400,37 @@ def update_profile():
         return jsonify({'error': 'User not found'}), 404
     
     data = get_data()
-    first = data.get('first', user.first)
-    last = data.get('last', user.last)
-    bio = data.get('bio', user.bio)
+    first = str(data.get('first', user.first) or '').strip()
+    last = str(data.get('last', user.last) or '').strip()
+    bio = str(data.get('bio', user.bio) or '').strip()
 
-    if 'password' in data and data['password']:
+    if len(first) < 1 or len(first) > 100 or len(last) < 1 or len(last) > 100:
+        return jsonify({'error': 'First and last name must be 1-100 characters'}), 400
+    if len(bio) > MAX_BIO_LENGTH:
+        return jsonify({'error': 'Bio is too long'}), 400
+
+    if data.get('password'):
+        new_password = data['password']
         old_password = data.get('old_password')
+        if not isinstance(new_password, str) or len(new_password) < 8 or len(new_password) > 128:
+            return jsonify({'error': 'Password must be at least 8 characters'}), 400
         if not old_password or not user.check_password(old_password):
             return jsonify({'error': 'Current password is incorrect'}), 400
-        user.set_password(data['password'])
+        user.set_password(new_password)
+        _invalidate_other_sessions(user, keep_current=True)
 
     user.first = first
     user.last = last
     user.bio = bio
 
-    if 'username' in data and data['username']:
-        existing = UserModel.query.filter_by(username=data['username']).first()
+    if data.get('username'):
+        username = str(data['username']).lower().strip()
+        if not USERNAME_RE.match(username):
+            return jsonify({'error': 'Username may only contain letters, numbers, hyphens, and underscores'}), 400
+        existing = UserModel.query.filter_by(username=username).first()
         if existing and existing.id != user.id:
             return jsonify({'error': 'Username already taken'}), 409
-        user.username = data['username'].lower().strip()
+        user.username = username
 
     db.session.commit()
     return jsonify({'message': 'Profile updated successfully!', 'user': user.serialize()})
@@ -353,11 +464,15 @@ def create_new_post():
     if not user:
         return jsonify({'error': 'User does not exist to create new post'}), 404
 
-    title = data.get('title', '').strip()
-    content = sanitize_html(data.get('content', '').strip())
-    label = data.get('label', '').strip()
+    title = str(data.get('title') or '').strip()
+    content = sanitize_html(str(data.get('content') or '').strip())
+    label = str(data.get('label') or '').strip()
     status = data.get('status', 'published')
 
+    if status not in ALLOWED_POST_STATUS:
+        return jsonify({'error': 'Status must be published or draft'}), 400
+    if len(title) > 200 or len(label) > 50 or len(content) > MAX_CONTENT_LENGTH:
+        return jsonify({'error': 'Title, community, or content is too long'}), 400
     if not title or not content or not label:
         return jsonify({'error': 'Title, content, and community are required'}), 400
 
@@ -389,19 +504,15 @@ def get_all_posts():
     query = published_posts_query()
     if label:
         query = query.filter_by(label=label)
-
-    if sort == 'trending':
-        query = query.order_by(desc(PostModel.likes + PostModel.view_count), desc(PostModel.created_at))
-    elif sort == 'popular':
-        query = query.order_by(desc(PostModel.likes), desc(PostModel.created_at))
-    else:
-        query = query.order_by(desc(PostModel.created_at))
+    query = apply_post_sort(query, sort)
 
     if page:
         return jsonify(paginate_query(query, page, per_page))
 
-    posts = query.all()
-    return jsonify([post.serialize(include_content=False) for post in posts])
+    posts = query.options(joinedload(PostModel.author)).all()
+    serialized = [post.serialize(include_content=False) for post in posts]
+    _attach_liked(serialized, [post.id for post in posts])
+    return jsonify(serialized)
     
 
 @app.route('/api/user-posts', methods=['GET'])
@@ -409,11 +520,15 @@ def get_user_posts():
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({'error': 'Not authorized'}), 401
-    posts = PostModel.query.filter_by(author_id=user_id)
-    post_list = [post.serialize() for post in posts]
-
-    sorted_posts = sorted(post_list, key=lambda x: x['created_at'], reverse=True)
-    return jsonify(sorted_posts)
+    posts = (
+        PostModel.query.options(joinedload(PostModel.author))
+        .filter_by(author_id=user_id)
+        .order_by(desc(PostModel.created_at), desc(PostModel.id))
+        .all()
+    )
+    serialized = [post.serialize(include_content=False) for post in posts]
+    _attach_liked(serialized, [post.id for post in posts])
+    return jsonify(serialized)
 
 
 @app.route('/api/posts/<int:post_id>', methods=['GET'])
@@ -434,31 +549,28 @@ def like_post(post_id):
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({'error': 'Not authorized'}), 401
+    post = db.session.get(PostModel, post_id)
+    if not post:
+        return jsonify({'error': 'Post not found'}), 404
+
     like = Like.query.filter_by(post_id=post_id, user_id=user_id).first()
-    
     if like:
-        # If the user has already liked the post before, remove the like from the database
         db.session.delete(like)
-        db.session.commit()
-        
-        # Decrement the number of likes for that post
-        post = PostModel.query.get(post_id)
+        db.session.flush()
         post.likes = Like.query.filter_by(post_id=post_id).count()
         db.session.commit()
-    
         return jsonify({'success': 'unliked'})
-    else:
-        # If the user has not liked the post before, add a new like entry to the database
-        like = Like(post_id=post_id, user_id=user_id)
-        db.session.add(like)
-        db.session.commit()
-        
-        # Increment the number of likes for that post
-        post = PostModel.query.get(post_id)
+
+    try:
+        db.session.add(Like(post_id=post_id, user_id=user_id))
+        db.session.flush()
         post.likes = Like.query.filter_by(post_id=post_id).count()
         db.session.commit()
-        
+    except IntegrityError:
+        db.session.rollback()
         return jsonify({'success': 'liked'})
+
+    return jsonify({'success': 'liked'})
 
 
 @app.route('/api/posts/<int:post_id>/likes', methods=['GET'])
@@ -481,18 +593,21 @@ def comments(post_id):
         user_id = get_current_user_id()
         if not user_id:
             return jsonify({'error': 'Not authorized'}), 401
-        user = UserModel.query.filter_by(id=user_id).first()
-        if user:
-            author_id = user.id
-            author_name = user.get_full_name()
-            body = data['body']
-            
-            comment = Comment(post_id= post_id, author_id=author_id, author_name=author_name, body=body)
-            db.session.add(comment)
-            db.session.commit()
-            return jsonify(comment.serialize()), 200
-        else:
+        post = db.session.get(PostModel, post_id)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+        user = db.session.get(UserModel, user_id)
+        if not user:
             return jsonify({'error': 'User does not exist to comment'}), 404
+        body = strip_html(str(data.get('body') or ''))
+        if not body:
+            return jsonify({'error': 'Comment body cannot be empty'}), 400
+        if len(body) > MAX_COMMENT_LENGTH:
+            return jsonify({'error': 'Comment is too long'}), 400
+        comment = Comment(post_id=post_id, author_id=user.id, author_name=user.get_full_name(), body=body)
+        db.session.add(comment)
+        db.session.commit()
+        return jsonify(comment.serialize()), 200
     
   
 #delete post
@@ -510,6 +625,8 @@ def delete_post(post_id):
     if post.author_id != user_id:
         return jsonify({'error': 'Not authorized to delete this post'}), 403
 
+    Like.query.filter_by(post_id=post_id).delete()
+    Bookmark.query.filter_by(post_id=post_id).delete()
     db.session.delete(post)
     db.session.commit()
 
@@ -523,9 +640,11 @@ def update_post(post_id):
         return jsonify({'error': 'Not authorized'}), 401
 
     data = get_data()
-    new_title = data.get('title', '').strip()
-    new_content = data.get('content', '').strip()
+    new_title = str(data.get('title') or '').strip()
+    new_content = sanitize_html(str(data.get('content') or '').strip())
 
+    if len(new_title) > 200 or len(new_content) > MAX_CONTENT_LENGTH:
+        return jsonify({'error': 'Title or content is too long'}), 400
     if not new_title or not new_content:
         return jsonify({'error': 'Title and content cannot be empty'}), 400
 
@@ -537,7 +656,7 @@ def update_post(post_id):
         return jsonify({'error': 'Not authorized to edit this post'}), 403
 
     post.title = new_title
-    post.content = sanitize_html(new_content)
+    post.content = new_content
     post.excerpt = make_excerpt(new_content)
     post.updated_at = datetime.datetime.utcnow()
     if post.slug:
@@ -573,10 +692,12 @@ def update_comment(comment_id):
         return jsonify({'error': 'Not authorized'}), 401
 
     data = get_data()
-    new_body = data.get('body', '').strip()
+    new_body = strip_html(str(data.get('body') or ''))
 
     if not new_body:
         return jsonify({'error': 'Comment body cannot be empty'}), 400
+    if len(new_body) > MAX_COMMENT_LENGTH:
+        return jsonify({'error': 'Comment is too long'}), 400
 
     comment = Comment.query.filter_by(id=comment_id).first()
     if not comment:
@@ -598,7 +719,7 @@ def platform_stats():
     return jsonify({
         'writers': UserModel.query.count(),
         'posts': published_posts_query().count(),
-        'communities': db.session.query(PostModel.label).distinct().count(),
+        'communities': published_posts_query().with_entities(PostModel.label).distinct().count(),
         'comments': Comment.query.count(),
         'total_likes': db.session.query(func.sum(PostModel.likes)).scalar() or 0
     })
@@ -606,17 +727,25 @@ def platform_stats():
 
 @app.route('/api/trending', methods=['GET'])
 def trending_posts():
-    limit = min(request.args.get('limit', 6, type=int), 20)
-    posts = published_posts_query().order_by(
-        desc(PostModel.likes + PostModel.view_count),
-        desc(PostModel.created_at)
-    ).limit(limit).all()
-    return jsonify([p.serialize(include_content=False) for p in posts])
+    raw_limit = request.args.get('limit', 6, type=int)
+    if raw_limit is None:
+        raw_limit = 6
+    limit = min(max(raw_limit, 1), 20)
+    posts = (
+        published_posts_query()
+        .options(joinedload(PostModel.author))
+        .order_by(desc(PostModel.likes + PostModel.view_count), desc(PostModel.created_at))
+        .limit(limit)
+        .all()
+    )
+    serialized = [p.serialize(include_content=False) for p in posts]
+    _attach_liked(serialized, [p.id for p in posts])
+    return jsonify(serialized)
 
 
 @app.route('/api/posts/slug/<slug>', methods=['GET'])
 def get_post_by_slug(slug):
-    post = PostModel.query.filter_by(slug=slug).first()
+    post = PostModel.query.options(joinedload(PostModel.author)).filter_by(slug=slug).first()
     if not post:
         return jsonify({'error': 'Post not found'}), 404
     if post.status == 'draft' and post.author_id != get_current_user_id():
@@ -627,6 +756,7 @@ def get_post_by_slug(slug):
     user_id = get_current_user_id()
     if user_id:
         data['is_bookmarked'] = Bookmark.query.filter_by(user_id=user_id, post_id=post.id).first() is not None
+        data['is_liked'] = Like.query.filter_by(user_id=user_id, post_id=post.id).first() is not None
         if post.author_id and post.author_id != user_id:
             data['is_following_author'] = Follow.query.filter_by(
                 follower_id=user_id, following_id=post.author_id
@@ -669,7 +799,7 @@ def bookmark_post(post_id):
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({'error': 'Not authorized'}), 401
-    post = PostModel.query.get(post_id)
+    post = db.session.get(PostModel, post_id)
     if not post:
         return jsonify({'error': 'Post not found'}), 404
 
@@ -693,9 +823,17 @@ def get_bookmarks():
         return jsonify({'error': 'Not authorized'}), 401
     bookmarks = Bookmark.query.filter_by(user_id=user_id).order_by(desc(Bookmark.created_at)).all()
     post_ids = [b.post_id for b in bookmarks]
-    posts = PostModel.query.filter(PostModel.id.in_(post_ids)).all() if post_ids else []
+    posts = (
+        PostModel.query.options(joinedload(PostModel.author)).filter(PostModel.id.in_(post_ids)).all()
+        if post_ids else []
+    )
     post_map = {p.id: p for p in posts}
-    return jsonify([post_map[b.post_id].serialize(include_content=False) for b in bookmarks if b.post_id in post_map])
+    serialized = [
+        post_map[b.post_id].serialize(include_content=False)
+        for b in bookmarks if b.post_id in post_map
+    ]
+    _attach_liked(serialized, [item['id'] for item in serialized])
+    return jsonify(serialized)
 
 
 @app.route('/api/users/<int:user_id>/follow', methods=['POST', 'DELETE'])
@@ -705,7 +843,7 @@ def follow_user(user_id):
         return jsonify({'error': 'Not authorized'}), 401
     if follower_id == user_id:
         return jsonify({'error': 'Cannot follow yourself'}), 400
-    target = UserModel.query.get(user_id)
+    target = db.session.get(UserModel, user_id)
     if not target:
         return jsonify({'error': 'User not found'}), 404
 
@@ -730,10 +868,10 @@ def rss_feed():
         link_slug = html.escape(post.slug or '')
         author = html.escape(post.author_name or '')
         pub_date = html.escape(str(post.created_at or ''))
-        excerpt = post.excerpt or ''
+        excerpt = cdata_safe(post.excerpt or '')
         items.append(f"""    <item>
       <title>{title}</title>
-      <link>{site_url}/post/{link_slug}</link>
+      <link>{html.escape(site_url)}/post/{link_slug}</link>
       <description><![CDATA[{excerpt}]]></description>
       <author>{author}</author>
       <pubDate>{pub_date}</pubDate>
@@ -742,7 +880,7 @@ def rss_feed():
 <rss version="2.0">
   <channel>
     <title>StarLight Blog</title>
-    <link>{site_url}</link>
+    <link>{html.escape(site_url)}</link>
     <description>Stories from the StarLight community</description>
 {chr(10).join(items)}
   </channel>

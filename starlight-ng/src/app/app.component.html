@@ -1,7 +1,8 @@
 <div class="app-container">
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <app-navbar></app-navbar>
 
-  <main class="main-content">
+  <main id="main-content" class="main-content" tabindex="-1">
     <router-outlet></router-outlet>
   </main>
 
@@ -22,7 +23,7 @@
           <h4>Writers</h4>
           <a routerLink="/new-post">Write a Story</a>
           <a routerLink="/registration">Sign Up</a>
-          <a href="/api/feed/rss" target="_blank" rel="noopener">RSS Feed</a>
+          <a [href]="rssUrl" target="_blank" rel="noopener">RSS Feed</a>
         </div>
         <div class="footer-col">
           <h4>Company</h4>

@@ -3,11 +3,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { PopUpComponent } from '../pop-up/pop-up.component';
 import { Router } from '@angular/router';
 import { Post } from 'src/app/models/post';
-import { User } from 'src/app/models/user';
 import { Comment } from 'src/app/models/comment';
-import { UserService } from 'src/app/services/user.service';
 import { PostService } from 'src/app/services/post.service';
 import { AuthService } from 'src/app/services/auth.service';
+import { absoluteAppUrl } from 'src/app/utils/app-url';
 
 function stripTags(value: string): string {
   let out = "";
@@ -33,34 +32,30 @@ export class PostCartComponent {
 
   isLiked = false;
   seeComments = false;
-  user: User;
   comments: Comment[] = [];
   newComment: Comment;
   successMessage = '';
   editingCommentId: number | null = null;
   editingCommentText = '';
+  commentsLoaded = false;
 
   constructor(
     private dialogRef: MatDialog,
-    private userService: UserService,
     private postService: PostService,
     private router: Router,
     public authService: AuthService
   ) {
-    this.user = new User();
     this.comments = [];
     this.newComment = new Comment();
     this.currentPost = new Post();
   }
 
   ngOnInit(): void {
-    if (this.authService.isLoggedIn()) {
-      this.getUser();
-    }
-    if (this.currentPost?.id) {
-      this.getPostLikes();
-      this.getPostComments();
-    }
+    this.isLiked = !!this.currentPost?.is_liked;
+  }
+
+  get displayCommentCount(): number {
+    return this.commentsLoaded ? this.comments.length : (this.currentPost.comment_count || 0);
   }
 
   get postLink(): string[] {
@@ -72,21 +67,10 @@ export class PostCartComponent {
     return username ? ['/author', username] : null;
   }
 
-  getUser(): void {
-    const uid = Number(this.authService.getUid());
-    if (!uid) return;
-    this.userService.getUserById(uid).subscribe(data => this.user = data);
-  }
-
-  getPostLikes(): void {
-    this.postService.getPostLikes(this.currentPost.id!).subscribe(likes => {
-      this.isLiked = likes.some(like => like.user_id === this.user?.id);
-    });
-  }
-
   getPostComments(): void {
     this.postService.getPostComments(this.currentPost.id!).subscribe(comments => {
       this.comments = comments;
+      this.commentsLoaded = true;
     });
   }
 
@@ -111,7 +95,8 @@ export class PostCartComponent {
   }
 
   isOwnPost(): boolean {
-    return !!this.user?.id && this.user.id === this.currentPost.author_id;
+    const uid = Number(this.authService.getUid());
+    return !!uid && uid === this.currentPost.author_id;
   }
 
   editPost(): void {
@@ -120,6 +105,9 @@ export class PostCartComponent {
 
   showComments(): void {
     this.seeComments = !this.seeComments;
+    if (this.seeComments && !this.commentsLoaded && this.currentPost.id) {
+      this.getPostComments();
+    }
   }
 
   submitComment(): void {
@@ -147,7 +135,8 @@ export class PostCartComponent {
 
   sharePost(): void {
     const slug = this.currentPost.slug || this.currentPost.id;
-    const url = `${window.location.origin}/post/${slug}`;
+    if (!slug) return;
+    const url = absoluteAppUrl(`/post/${slug}`);
     navigator.clipboard.writeText(url);
     this.successMessage = 'Link copied!';
     setTimeout(() => this.successMessage = '', 2000);
@@ -182,10 +171,14 @@ export class PostCartComponent {
   }
 
   isOwnComment(comment: Comment): boolean {
-    return !!this.user?.id && this.user.id === comment.author_id;
+    const uid = Number(this.authService.getUid());
+    return !!uid && uid === comment.author_id;
   }
 
   getReadingTime(): number {
+    if (this.currentPost?.reading_minutes) {
+      return this.currentPost.reading_minutes;
+    }
     const text = stripTags(this.currentPost?.content || '');
     const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
     return Math.max(1, Math.ceil(words / 200));

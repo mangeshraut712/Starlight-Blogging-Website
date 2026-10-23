@@ -266,6 +266,14 @@
   text-align: center;
 }
 
+button.dropdown-item,
+button.mobile-nav-link {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
 .logout-item {
   color: #dc2626 !important;
 }

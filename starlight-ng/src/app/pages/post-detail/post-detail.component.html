@@ -1,4 +1,4 @@
-<div class="reading-progress" [style.width.%]="readingProgress"></div>
+<div class="reading-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="readingProgress" [style.width.%]="readingProgress"></div>
 
 <div class="article-page" *ngIf="!isLoading && post.id; else loadingOrError">
   <article class="article-container">
@@ -8,7 +8,7 @@
       <p class="article-excerpt" *ngIf="post.excerpt">{{ post.excerpt }}</p>
 
       <div class="article-byline">
-        <button class="author-link" (click)="goToAuthor()" *ngIf="author?.username">
+        <button type="button" class="author-link" (click)="goToAuthor()" *ngIf="post.author_username">
           <div class="author-avatar">{{ post.author_name?.charAt(0) }}</div>
           <div>
             <span class="author-name">{{ post.author_name }}</span>
@@ -19,20 +19,20 @@
           </div>
         </button>
         <div class="article-actions">
-          <button class="action-btn" (click)="toggleLike()" [class.active]="isLiked" title="Like">
+          <button type="button" class="action-btn" (click)="toggleLike()" [class.active]="isLiked" [attr.aria-pressed]="isLiked">
             <i class="bi" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
             <span>{{ post.likes || 0 }}</span>
           </button>
-          <button class="action-btn" (click)="toggleBookmark()" [class.active]="isBookmarked" title="Bookmark" *ngIf="isLoggedIn()">
+          <button type="button" class="action-btn" (click)="toggleBookmark()" [class.active]="isBookmarked" [attr.aria-pressed]="isBookmarked" *ngIf="isLoggedIn()">
             <i class="bi" [class.bi-bookmark]="!isBookmarked" [class.bi-bookmark-fill]="isBookmarked"></i>
             <span>{{ isBookmarked ? 'Saved' : 'Save' }}</span>
           </button>
-          <button class="action-btn" (click)="toggleFollow()" [class.active]="isFollowing" title="Follow author"
+          <button type="button" class="action-btn" (click)="toggleFollow()" [class.active]="isFollowing" [attr.aria-pressed]="isFollowing"
             *ngIf="isLoggedIn() && post.author_id && post.author_id !== (+authService.getUid()!)">
             <i class="bi" [class.bi-person-plus]="!isFollowing" [class.bi-person-check-fill]="isFollowing"></i>
             <span>{{ isFollowing ? 'Following' : 'Follow' }}</span>
           </button>
-          <button class="action-btn" (click)="sharePost()" title="Share">
+          <button type="button" class="action-btn" (click)="sharePost()">
             <i class="bi bi-share"></i>
             <span>{{ shareCopied ? 'Copied!' : 'Share' }}</span>
           </button>
@@ -48,7 +48,7 @@
 
     <footer class="article-footer">
       <div class="engagement-bar">
-        <button class="engage-btn" (click)="toggleLike()" [class.active]="isLiked">
+        <button type="button" class="engage-btn" (click)="toggleLike()" [class.active]="isLiked">
           <i class="bi" [class.bi-heart]="!isLiked" [class.bi-heart-fill]="isLiked"></i>
           {{ post.likes || 0 }} {{ (post.likes || 0) === 1 ? 'Like' : 'Likes' }}
         </button>
@@ -60,7 +60,8 @@
   <section class="comments-section">
     <h3>Responses ({{ comments.length }})</h3>
     <div class="comment-compose" *ngIf="isLoggedIn(); else loginPrompt">
-      <textarea [(ngModel)]="newComment" placeholder="Share your thoughts..." rows="3"></textarea>
+      <label class="visually-hidden" for="story-comment">Share your thoughts</label>
+      <textarea id="story-comment" [(ngModel)]="newComment" placeholder="Share your thoughts..." rows="3"></textarea>
       <button class="btn-publish" (click)="submitComment()" [disabled]="!newComment.trim()">Publish</button>
     </div>
     <ng-template #loginPrompt>
@@ -81,7 +82,7 @@
 </div>
 
 <ng-template #loadingOrError>
-  <div class="state-container">
+  <div class="state-container" role="status" aria-live="polite">
     <div class="spinner-ring" *ngIf="isLoading"></div>
     <p *ngIf="isLoading">Loading story...</p>
     <p *ngIf="!isLoading && errorMessage">{{ errorMessage }}</p>

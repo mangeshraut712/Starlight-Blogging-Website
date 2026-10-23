@@ -191,7 +191,7 @@ In production, GitHub Pages hosts the static Angular build (base path `/Starligh
 |--------|----------|-------------|
 | POST | `/api/login` | Login (session cookie) |
 | POST | `/api/register` | Register new user |
-| GET | `/api/logout` | End session |
+| POST | `/api/logout` | End session |
 | GET | `/api/current_user` | Current user profile |
 | POST | `/api/forgot_password` | Request password reset (generic response) |
 | POST | `/api/reset_password` | Reset with signed `token` |

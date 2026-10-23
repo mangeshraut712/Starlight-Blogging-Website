@@ -4,7 +4,6 @@ import { SecurityContext } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Post } from 'src/app/models/post';
 import { Comment } from 'src/app/models/comment';
-import { User } from 'src/app/models/user';
 import { PostService } from 'src/app/services/post.service';
 import { UserService } from 'src/app/services/user.service';
 import { AuthService } from 'src/app/services/auth.service';
@@ -30,7 +29,6 @@ function stripTags(value: string): string {
 })
 export class PostDetailComponent implements OnInit, OnDestroy {
   post: Post = new Post();
-  author?: User;
   comments: Comment[] = [];
   newComment = '';
   isLoading = true;
@@ -81,29 +79,19 @@ export class PostDetailComponent implements OnInit, OnDestroy {
         this.safeContent = sanitized;
         this.isBookmarked = !!post.is_bookmarked;
         this.isFollowing = !!post.is_following_author;
+        this.isLiked = !!post.is_liked;
         this.metaService.setPageMeta({
           title: post.title || 'Story',
           description: post.excerpt || '',
           author: post.author_name
         });
-        this.loadAuthor();
         this.loadComments();
-        if (this.authService.isLoggedIn()) {
-          this.checkLikeStatus();
-        }
         this.isLoading = false;
       },
       error: () => {
         this.errorMessage = 'This story could not be found.';
         this.isLoading = false;
       }
-    });
-  }
-
-  loadAuthor(): void {
-    if (!this.post.author_id) return;
-    this.userService.getUserById(this.post.author_id).subscribe({
-      next: (user) => this.author = user
     });
   }
 
@@ -114,15 +102,10 @@ export class PostDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  checkLikeStatus(): void {
-    if (!this.post.id) return;
-    const uid = Number(this.authService.getUid());
-    this.postService.getPostLikes(this.post.id).subscribe({
-      next: (likes) => this.isLiked = likes.some(l => l.user_id === uid)
-    });
-  }
-
   getReadingTime(): number {
+    if (this.post.reading_minutes) {
+      return this.post.reading_minutes;
+    }
     const text = stripTags(this.post.content || '');
     const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
     return Math.max(1, Math.ceil(words / 200));
@@ -189,8 +172,8 @@ export class PostDetailComponent implements OnInit, OnDestroy {
   }
 
   goToAuthor(): void {
-    if (this.author?.username) {
-      this.router.navigate(['/author', this.author.username]);
+    if (this.post.author_username) {
+      this.router.navigate(['/author', this.post.author_username]);
     }
   }
 

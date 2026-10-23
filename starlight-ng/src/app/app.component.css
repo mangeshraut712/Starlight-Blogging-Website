@@ -4,6 +4,22 @@
   min-height: 100vh;
 }
 
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  transform: translateY(-120%);
+  background: #111827;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 10000;
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
 .main-content { flex: 1; }
 
 .site-footer {
