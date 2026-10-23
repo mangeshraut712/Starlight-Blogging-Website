@@ -48,12 +48,6 @@ export class MetaService {
 
   private updateCanonical(url: string): void {
     this.meta.updateTag({ property: 'og:url', content: url });
-    let canonicalHtml = document.querySelector("link[rel='canonical']") as HTMLLinkElement | null;
-    if (!canonicalHtml) {
-      canonicalHtml = document.createElement('link');
-      canonicalHtml.setAttribute('rel', 'canonical');
-      document.head.appendChild(canonicalHtml);
-    }
-    canonicalHtml.setAttribute('href', url);
+    document.querySelector("link[rel='canonical']")?.setAttribute('href', url);
   }
 }
