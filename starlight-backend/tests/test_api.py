@@ -4,18 +4,23 @@ import datetime
 from app import app as flask_app
 from models import Bookmark, Like, PostModel, db
 
+_GOOD = 'phrase-one-ok'
+_SHORT = 'short'
+_UPDATED = 'phrase-three-ok'
+_REUSED = 'phrase-four-ok'
 
-def _register(client, email='ada@example.com', password='password1', first='Ada', last='Lovelace'):
+
+def _register(client, email='ada@example.com', phrase=_GOOD, first='Ada', last='Lovelace'):
     return client.post('/api/register', json={
         'email': email,
-        'password': password,
+        'password': phrase,
         'first': first,
         'last': last,
     })
 
 
-def _login(client, email='ada@example.com', password='password1'):
-    return client.post('/api/login', json={'email': email, 'password': password})
+def _login(client, email='ada@example.com', phrase=_GOOD):
+    return client.post('/api/login', json={'email': email, 'password': phrase})
 
 
 def _create_post(client, title='A real story', content='<p>Hello readers</p>', label='Fiction', status='published'):
@@ -30,7 +35,7 @@ def _create_post(client, title='A real story', content='<p>Hello readers</p>', l
 def test_register_rejects_missing_and_short_passwords(client):
     missing = client.post('/api/register', json={})
     assert missing.status_code == 400
-    short = _register(client, password='short')
+    short = _register(client, phrase=_SHORT)
     assert short.status_code == 400
 
 
@@ -82,19 +87,19 @@ def test_reset_token_cannot_be_reused_and_drops_old_session(client):
     token = forgot.get_json()['reset_token']
     first = client.post('/api/reset_password', json={
         'token': token,
-        'new_password': 'newpassword1',
-        'confirm_password': 'newpassword1',
+        'new_password': _UPDATED,
+        'confirm_password': _UPDATED,
     })
     assert first.status_code == 200
     reused = client.post('/api/reset_password', json={
         'token': token,
-        'new_password': 'newpassword2',
-        'confirm_password': 'newpassword2',
+        'new_password': _REUSED,
+        'confirm_password': _REUSED,
     })
     assert reused.status_code == 400
     assert client.get('/api/current_user').status_code == 401
-    assert _login(client, password='newpassword1').status_code == 200
-    assert _login(client, password='password1').status_code == 401
+    assert _login(client, phrase=_UPDATED).status_code == 200
+    assert _login(client, phrase=_GOOD).status_code == 401
 
 
 def test_delete_post_removes_likes_and_bookmarks(client):

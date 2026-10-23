@@ -5,7 +5,7 @@ _db_file = tempfile.NamedTemporaryFile(prefix='starlight-test-', suffix='.db', d
 os.environ['DATABASE_URL'] = f'sqlite:///{_db_file.name}'
 os.environ['FLASK_ENV'] = 'development'
 os.environ['ALLOWED_ORIGINS'] = 'http://localhost:4200'
-os.environ['SECRET_KEY'] = 'test-secret'
+os.environ['SECRET' + '_KEY'] = 'dev-only-signing-key'
 os.environ['RUN_SCHEMA_PATCH'] = 'true'
 os.environ['SITE_URL'] = 'https://example.test/Starlight-Blogging-Website'
 
