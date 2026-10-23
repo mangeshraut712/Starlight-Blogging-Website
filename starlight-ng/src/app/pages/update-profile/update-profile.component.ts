@@ -69,7 +69,7 @@ Update: any;
         this.router.navigate(['update-profile']);
       },
       (error:any) => {
-        console.log('Update failed: ', error)
+        this.message = error?.error?.error || 'Update failed. Please check your information and try again.';
       }
     );
   }

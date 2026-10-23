@@ -129,7 +129,7 @@ export class AuthService {
    */
   logout(): Observable<any> {
     this.clearAuthData();
-    return this.http.get<any>(`${this.BASE_URL}/api/logout`, httpOptions)
+    return this.http.post<any>(`${this.BASE_URL}/api/logout`, {}, httpOptions)
       .pipe(
         catchError(this.handleError)
       );

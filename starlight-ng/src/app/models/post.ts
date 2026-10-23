@@ -16,6 +16,9 @@ export class Post {
   status?: string;
   is_bookmarked?: boolean;
   is_following_author?: boolean;
+  is_liked?: boolean;
+  reading_minutes?: number;
+  comment_count?: number;
 }
 
 export interface PaginatedPosts {

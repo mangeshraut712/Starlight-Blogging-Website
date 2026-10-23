@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ThemeService } from './services/theme.service';
 import { AuthService } from './services/auth.service';
+import { getApiBaseUrl } from './utils/api-url';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +11,7 @@ import { AuthService } from './services/auth.service';
 })
 export class AppComponent implements OnInit {
   title = 'StarLight';
+  rssUrl = `${getApiBaseUrl()}/api/feed/rss`;
 
   constructor(
     private themeService: ThemeService,

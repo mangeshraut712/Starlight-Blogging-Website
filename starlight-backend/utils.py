@@ -1,3 +1,7 @@
+import html
+import re
+import unicodedata
+
 
 def _strip_tags(html_content: str) -> str:
     out = []
@@ -11,12 +15,9 @@ def _strip_tags(html_content: str) -> str:
             out.append(ch)
     return "".join(out)
 
-import re
-import unicodedata
-
 
 def slugify(text: str) -> str:
-    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')
+    text = unicodedata.normalize('NFKD', text or '').encode('ascii', 'ignore').decode('ascii')
     text = re.sub(r'[^\w\s-]', '', text.lower())
     return re.sub(r'[-\s]+', '-', text).strip('-') or 'post'
 
@@ -29,7 +30,7 @@ def make_unique_slug(title: str, post_id: int = None) -> str:
 
 
 def make_excerpt(html_content: str, length: int = 160) -> str:
-    text = _strip_tags(html_content)
+    text = html.unescape(_strip_tags(html_content))
     text = re.sub(r'\s+', ' ', text).strip()
     if len(text) <= length:
         return text
@@ -41,3 +42,26 @@ def make_username(email: str, first: str, last: str, user_id: int = None) -> str
     if user_id:
         return f"{base}{user_id}"
     return base
+
+
+def escape_like(value: str) -> str:
+    """Escape LIKE wildcards so user input is matched literally."""
+    return (
+        (value or '')
+        .replace('\\', '\\\\')
+        .replace('%', '\\%')
+        .replace('_', '\\_')
+    )
+
+
+def reading_time_minutes(html_content: str) -> int:
+    text = re.sub(r'\s+', ' ', _strip_tags(html_content or '')).strip()
+    if not text:
+        return 1
+    words = len(text.split())
+    return max(1, (words + 199) // 200)
+
+
+def cdata_safe(value: str) -> str:
+    """Keep user text from breaking out of an XML CDATA section."""
+    return (value or '').replace(']]>', ']]]]><![CDATA[>')

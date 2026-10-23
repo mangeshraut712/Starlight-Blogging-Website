@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { User } from 'src/app/models/user';
 import { Post } from 'src/app/models/post';
@@ -12,7 +12,7 @@ import { MetaService } from 'src/app/services/meta.service';
   templateUrl: './author-profile.component.html',
   styleUrls: ['./author-profile.component.css']
 })
-export class AuthorProfileComponent implements OnInit {
+export class AuthorProfileComponent implements OnInit, OnDestroy {
   author?: User;
   posts: Post[] = [];
   username = '';
@@ -31,6 +31,15 @@ export class AuthorProfileComponent implements OnInit {
       this.username = params['username'];
       this.loadAuthor();
     });
+  }
+
+  ngOnDestroy(): void {
+    this.metaService.resetMeta();
+  }
+
+  get canFollow(): boolean {
+    const uid = Number(this.authService.getUid());
+    return this.authService.isLoggedIn() && !!this.author?.id && this.author.id !== uid;
   }
 
   loadAuthor(): void {
@@ -60,13 +69,9 @@ export class AuthorProfileComponent implements OnInit {
   }
 
   toggleFollow(): void {
-    if (!this.authService.isLoggedIn() || !this.author?.id) return;
+    if (!this.canFollow || !this.author?.id) return;
     this.userService.followUser(this.author.id, !this.isFollowing).subscribe({
       next: () => this.isFollowing = !this.isFollowing
     });
-  }
-
-  isLoggedIn(): boolean {
-    return this.authService.isLoggedIn();
   }
 }

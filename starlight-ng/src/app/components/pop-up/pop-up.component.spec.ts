@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatDialogModule } from '@angular/material/dialog';
 
 import { PopUpComponent } from './pop-up.component';
 
@@ -8,6 +9,7 @@ describe('PopUpComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [MatDialogModule],
       declarations: [ PopUpComponent ]
     })
     .compileComponents();

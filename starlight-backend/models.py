@@ -2,7 +2,9 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, LoginManager
 from datetime import datetime
-from sqlalchemy.orm import backref
+from sqlalchemy import func, select
+from sqlalchemy.orm import backref, column_property
+from utils import reading_time_minutes
 
 login = LoginManager()
 db = SQLAlchemy()
@@ -19,6 +21,8 @@ class UserModel(UserMixin, db.Model):
     bio = db.Column(db.Text, nullable=True)
     avatar_url = db.Column(db.String(500), nullable=True)
     password_hash = db.Column(db.String(), nullable=False)
+    # Bumped on password change so older session cookies stop authenticating.
+    session_version = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -82,6 +86,8 @@ class PostModel(db.Model):
             'status': self.status,
             'created_at': self.created_at,
             'updated_at': self.updated_at,
+            'reading_minutes': reading_time_minutes(self.content or ''),
+            'comment_count': int(self.comment_count or 0),
         }
         if include_content:
             data['content'] = self.content
@@ -143,6 +149,14 @@ class Follow(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (db.UniqueConstraint('follower_id', 'following_id', name='unique_follow'),)
+
+
+PostModel.comment_count = column_property(
+    select(func.count(Comment.id))
+    .where(Comment.post_id == PostModel.id)
+    .correlate_except(Comment)
+    .scalar_subquery()
+)
 
 
 @login.user_loader

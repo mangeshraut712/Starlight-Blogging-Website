@@ -8,7 +8,9 @@
     <form class="search-form" (ngSubmit)="search()">
       <div class="search-input-group">
         <i class="bi bi-search search-icon"></i>
+        <label class="visually-hidden" for="search-query">Search stories</label>
         <input
+          id="search-query"
           type="search"
           class="search-input"
           [(ngModel)]="query"
@@ -18,7 +20,8 @@
         />
       </div>
 
-      <select class="search-filter" [(ngModel)]="labelFilter" name="labelFilter">
+      <label class="visually-hidden" for="community-filter">Community</label>
+      <select id="community-filter" class="search-filter" [(ngModel)]="labelFilter" name="labelFilter">
         <option value="">All Communities</option>
         <option *ngFor="let community of communityList" [value]="community">
           {{ community }}
@@ -35,7 +38,7 @@
       </div>
     </form>
 
-    <div *ngIf="isLoading" class="loading-state">
+    <div *ngIf="isLoading" class="loading-state" role="status" aria-live="polite">
       <div class="spinner-ring"></div>
       <p>Searching the cosmos...</p>
     </div>

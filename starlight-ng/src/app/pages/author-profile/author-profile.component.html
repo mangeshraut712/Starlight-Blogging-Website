@@ -10,7 +10,7 @@
         <span><strong>{{ author.post_count || 0 }}</strong> stories</span>
         <span><strong>{{ author.follower_count || 0 }}</strong> followers</span>
       </div>
-      <button class="btn-follow" *ngIf="isLoggedIn()" (click)="toggleFollow()">
+      <button type="button" class="btn-follow" *ngIf="canFollow" (click)="toggleFollow()" [attr.aria-pressed]="isFollowing">
         {{ isFollowing ? 'Following' : 'Follow' }}
       </button>
     </div>
@@ -39,5 +39,5 @@
 </div>
 
 <ng-template #loading>
-  <div class="loading-state"><div class="spinner-ring"></div></div>
+  <div class="loading-state" role="status" aria-live="polite"><div class="spinner-ring"></div><p class="visually-hidden">Loading author</p></div>
 </ng-template>
