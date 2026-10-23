@@ -1,6 +1,17 @@
 """Backend security and sanitization tests."""
-import pytest
+from html.parser import HTMLParser
+
 from sanitize import sanitize_html
+
+
+class _HrefParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.href = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            self.href = dict(attrs).get('href')
 
 
 def test_sanitize_strips_script_tags():
@@ -28,4 +39,6 @@ def test_sanitize_adds_noopener_to_links():
     clean = sanitize_html('<a href="https://example.com" target="_blank">x</a>')
     assert 'noopener' in clean
     assert 'noreferrer' in clean
-    assert 'https://example.com' in clean
+    parser = _HrefParser()
+    parser.feed(clean)
+    assert parser.href == 'https://example.com'

@@ -107,7 +107,6 @@ def paginate_query(query, page, per_page):
         'has_more': (page * per_page) < total
     }
 
-EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 USERNAME_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{0,79}$')
 MAX_CONTENT_LENGTH = 100_000
 MAX_BIO_LENGTH = 2000
@@ -116,6 +115,17 @@ ALLOWED_POST_STATUS = {'published', 'draft'}
 
 def get_data():
     return request.get_json(silent=True) or {}
+
+def _valid_email(email: str) -> bool:
+    """Reject malformed addresses without a backtracking regular expression."""
+    if not email or len(email) > 80 or any(ch.isspace() for ch in email):
+        return False
+    local, sep, domain = email.partition('@')
+    if not sep or '@' in domain or not local or not domain:
+        return False
+    if domain.startswith('.') or domain.endswith('.') or '.' not in domain:
+        return False
+    return True
 
 def get_current_user():
     user_id = session.get('user_id')
@@ -291,7 +301,7 @@ def register():
     first = str(data.get('first') or '').strip()
     last = str(data.get('last') or '').strip()
 
-    if not EMAIL_RE.match(email) or len(email) > 80:
+    if not _valid_email(email):
         return jsonify({'error': 'A valid email is required'}), 400
     if not isinstance(password, str) or len(password) < 8 or len(password) > 128:
         return jsonify({'error': 'Password must be at least 8 characters'}), 400
