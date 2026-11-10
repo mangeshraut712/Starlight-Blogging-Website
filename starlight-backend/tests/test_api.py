@@ -228,3 +228,34 @@ def test_profile_username_rejects_path_characters(client):
         'username': '../admin',
     })
     assert bad.status_code == 400
+
+
+def test_other_readers_cannot_touch_or_list_a_draft(client):
+    _register(client)
+    draft = _create_post(client, title='Unpublished notes', status='draft').get_json()['post']
+    post_id = draft['id']
+    client.post('/api/logout')
+
+    _register(client, email='grace@example.com', first='Grace', last='Hopper')
+    assert client.post(f'/api/posts/{post_id}/like').status_code == 404
+    assert client.post(f'/api/posts/{post_id}/comments', json={'body': 'nice'}).status_code == 404
+    assert client.get(f'/api/posts/{post_id}/comments').status_code == 404
+    assert client.get(f'/api/posts/{post_id}/likes').status_code == 404
+    assert client.post(f'/api/posts/{post_id}/bookmark').status_code == 404
+    with flask_app.app_context():
+        assert Like.query.filter_by(post_id=post_id).count() == 0
+        db.session.add(Bookmark(user_id=2, post_id=post_id))
+        db.session.commit()
+    titles = [item['title'] for item in client.get('/api/bookmarks').get_json()]
+    assert 'Unpublished notes' not in titles
+
+
+def test_author_can_still_work_with_their_own_draft(client):
+    _register(client)
+    draft = _create_post(client, title='My draft', status='draft').get_json()['post']
+    post_id = draft['id']
+    assert client.post(f'/api/posts/{post_id}/comments', json={'body': 'todo: intro'}).status_code == 200
+    assert client.get(f'/api/posts/{post_id}/comments').status_code == 200
+    assert client.post(f'/api/posts/{post_id}/bookmark').status_code == 200
+    titles = [item['title'] for item in client.get('/api/bookmarks').get_json()]
+    assert titles == ['My draft']

@@ -87,6 +87,18 @@ def published_posts_query():
         (PostModel.status == 'published') | (PostModel.status == None)
     )
 
+def visible_post(post_id):
+    """Return the post if the current reader may see it, else None.
+
+    Drafts are visible only to their author, the same rule get_post_by_id uses.
+    """
+    post = db.session.get(PostModel, post_id)
+    if not post:
+        return None
+    if post.status == 'draft' and post.author_id != get_current_user_id():
+        return None
+    return post
+
 def paginate_query(query, page, per_page):
     page = max(1, page or 1)
     per_page = min(max(1, per_page or 12), 50)
@@ -559,7 +571,7 @@ def like_post(post_id):
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({'error': 'Not authorized'}), 401
-    post = db.session.get(PostModel, post_id)
+    post = visible_post(post_id)
     if not post:
         return jsonify({'error': 'Post not found'}), 404
 
@@ -585,6 +597,8 @@ def like_post(post_id):
 
 @app.route('/api/posts/<int:post_id>/likes', methods=['GET'])
 def get_post_likes(post_id):
+    if not visible_post(post_id):
+        return jsonify({'error': 'Post not found'}), 404
     likes = Like.query.filter_by(post_id=post_id).all()
     like_list = [like.serialize() for like in likes]
     return jsonify(like_list)
@@ -593,6 +607,8 @@ def get_post_likes(post_id):
 #comment on post
 @app.route('/api/posts/<int:post_id>/comments', methods=['GET','POST','OPTIONS'])
 def comments(post_id):
+    if request.method in ('GET', 'POST') and not visible_post(post_id):
+        return jsonify({'error': 'Post not found'}), 404
     if request.method == 'GET':
         comments = Comment.query.filter_by(post_id=post_id).all()
         comments_list = [comment.serialize() for comment in comments]
@@ -809,7 +825,7 @@ def bookmark_post(post_id):
     user_id = get_current_user_id()
     if not user_id:
         return jsonify({'error': 'Not authorized'}), 401
-    post = db.session.get(PostModel, post_id)
+    post = visible_post(post_id)
     if not post:
         return jsonify({'error': 'Post not found'}), 404
 
@@ -834,7 +850,10 @@ def get_bookmarks():
     bookmarks = Bookmark.query.filter_by(user_id=user_id).order_by(desc(Bookmark.created_at)).all()
     post_ids = [b.post_id for b in bookmarks]
     posts = (
-        PostModel.query.options(joinedload(PostModel.author)).filter(PostModel.id.in_(post_ids)).all()
+        PostModel.query.options(joinedload(PostModel.author))
+        .filter(PostModel.id.in_(post_ids))
+        .filter((PostModel.status != 'draft') | (PostModel.status == None) | (PostModel.author_id == user_id))
+        .all()
         if post_ids else []
     )
     post_map = {p.id: p for p in posts}
