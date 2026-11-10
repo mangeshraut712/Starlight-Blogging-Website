@@ -30,6 +30,8 @@ def make_unique_slug(title: str, post_id: int = None) -> str:
 
 
 def make_excerpt(html_content: str, length: int = 160) -> str:
+    if length <= 0:
+        raise ValueError(f"length must be a positive integer, got {length}")
     text = html.unescape(_strip_tags(html_content))
     text = re.sub(r'\s+', ' ', text).strip()
     if len(text) <= length:
