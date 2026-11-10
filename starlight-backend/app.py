@@ -87,17 +87,16 @@ def published_posts_query():
         (PostModel.status == 'published') | (PostModel.status == None)
     )
 
-def visible_post(post_id):
-    """Return the post if the current reader may see it, else None.
+def visible_to(user_id):
+    """SQL filter for posts a reader may see: anything but drafts, plus their own drafts.
 
-    Drafts are visible only to their author, the same rule get_post_by_id uses.
+    Same rule get_post_by_id uses; the single place that defines draft visibility.
     """
-    post = db.session.get(PostModel, post_id)
-    if not post:
-        return None
-    if post.status == 'draft' and post.author_id != get_current_user_id():
-        return None
-    return post
+    return (PostModel.status != 'draft') | (PostModel.status == None) | (PostModel.author_id == user_id)
+
+def visible_post(post_id):
+    """Return the post if the current reader may see it, else None."""
+    return PostModel.query.filter(PostModel.id == post_id, visible_to(get_current_user_id())).first()
 
 def paginate_query(query, page, per_page):
     page = max(1, page or 1)
@@ -607,7 +606,8 @@ def get_post_likes(post_id):
 #comment on post
 @app.route('/api/posts/<int:post_id>/comments', methods=['GET','POST','OPTIONS'])
 def comments(post_id):
-    if request.method in ('GET', 'POST') and not visible_post(post_id):
+    post = visible_post(post_id) if request.method in ('GET', 'POST') else None
+    if request.method in ('GET', 'POST') and not post:
         return jsonify({'error': 'Post not found'}), 404
     if request.method == 'GET':
         comments = Comment.query.filter_by(post_id=post_id).all()
@@ -619,9 +619,6 @@ def comments(post_id):
         user_id = get_current_user_id()
         if not user_id:
             return jsonify({'error': 'Not authorized'}), 401
-        post = db.session.get(PostModel, post_id)
-        if not post:
-            return jsonify({'error': 'Post not found'}), 404
         user = db.session.get(UserModel, user_id)
         if not user:
             return jsonify({'error': 'User does not exist to comment'}), 404
@@ -852,7 +849,7 @@ def get_bookmarks():
     posts = (
         PostModel.query.options(joinedload(PostModel.author))
         .filter(PostModel.id.in_(post_ids))
-        .filter((PostModel.status != 'draft') | (PostModel.status == None) | (PostModel.author_id == user_id))
+        .filter(visible_to(user_id))
         .all()
         if post_ids else []
     )
