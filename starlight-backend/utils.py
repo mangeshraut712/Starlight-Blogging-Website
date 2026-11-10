@@ -32,9 +32,14 @@ def make_unique_slug(title: str, post_id: int = None) -> str:
 def make_excerpt(html_content: str, length: int = 160) -> str:
     text = html.unescape(_strip_tags(html_content))
     text = re.sub(r'\s+', ' ', text).strip()
+    if length <= 0:
+        return ''
     if len(text) <= length:
         return text
-    return text[:length].rsplit(' ', 1)[0] + '...'
+    clipped = text[:length]
+    if ' ' not in clipped:
+        return clipped + '...'
+    return clipped.rsplit(' ', 1)[0] + '...'
 
 
 def make_username(email: str, first: str, last: str, user_id: int = None) -> str:
