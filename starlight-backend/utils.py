@@ -19,11 +19,11 @@ def _strip_tags(html_content: str) -> str:
 def slugify(text: str) -> str:
     text = unicodedata.normalize('NFKD', text or '').encode('ascii', 'ignore').decode('ascii')
     text = re.sub(r'[^\w\s-]', '', text.lower())
-    return re.sub(r'[-\s]+', '-', text).strip('-') or 'post'
+    return re.sub(r'[-\s]+', '-', text).strip('-')
 
 
 def make_unique_slug(title: str, post_id: int = None) -> str:
-    base = slugify(title)[:80]
+    base = (slugify(title) or 'post')[:80]
     if post_id:
         return f"{base}-{post_id}"
     return base
@@ -38,7 +38,7 @@ def make_excerpt(html_content: str, length: int = 160) -> str:
 
 
 def make_username(email: str, first: str, last: str, user_id: int = None) -> str:
-    base = slugify(f"{first}{last}") or slugify(email.split('@')[0])
+    base = slugify(f"{first}{last}") or slugify((email or '').split('@')[0]) or 'user'
     if user_id:
         return f"{base}{user_id}"
     return base
