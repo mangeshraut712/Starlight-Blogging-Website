@@ -24,7 +24,7 @@ def slugify(text: str) -> str:
 
 def make_unique_slug(title: str, post_id: int = None) -> str:
     base = slugify(title)[:80]
-    if post_id:
+    if post_id is not None:
         return f"{base}-{post_id}"
     return base
 
@@ -39,7 +39,7 @@ def make_excerpt(html_content: str, length: int = 160) -> str:
 
 def make_username(email: str, first: str, last: str, user_id: int = None) -> str:
     base = slugify(f"{first}{last}") or slugify(email.split('@')[0])
-    if user_id:
+    if user_id is not None:
         return f"{base}{user_id}"
     return base
 
