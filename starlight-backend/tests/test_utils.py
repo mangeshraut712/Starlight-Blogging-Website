@@ -20,3 +20,12 @@ def test_reading_time_uses_word_count():
 
 def test_cdata_safe_breaks_early_terminator():
     assert cdata_safe('end ]]> here') == 'end ]]]]><![CDATA[> here'
+
+
+
+def test_make_excerpt_hard_truncates_unbroken_text():
+    url = 'https://example.com/' + ('a' * 80)
+    excerpt = make_excerpt(url, length=20)
+    assert excerpt.endswith('...')
+    assert len(excerpt) <= 23
+    assert ' ' not in excerpt[:-3]
