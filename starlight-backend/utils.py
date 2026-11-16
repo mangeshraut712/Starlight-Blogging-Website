@@ -24,22 +24,29 @@ def slugify(text: str) -> str:
 
 def make_unique_slug(title: str, post_id: int = None) -> str:
     base = (slugify(title) or 'post')[:80]
-    if post_id:
+    if post_id is not None:
         return f"{base}-{post_id}"
     return base
 
 
 def make_excerpt(html_content: str, length: int = 160) -> str:
+    if length <= 0:
+        raise ValueError(f"length must be a positive integer, got {length}")
     text = html.unescape(_strip_tags(html_content))
     text = re.sub(r'\s+', ' ', text).strip()
+    if length <= 0:
+        return ''
     if len(text) <= length:
         return text
-    return text[:length].rsplit(' ', 1)[0] + '...'
+    clipped = text[:length]
+    if ' ' not in clipped:
+        return clipped + '...'
+    return clipped.rsplit(' ', 1)[0] + '...'
 
 
 def make_username(email: str, first: str, last: str, user_id: int = None) -> str:
     base = slugify(f"{first}{last}") or slugify((email or '').split('@')[0]) or 'user'
-    if user_id:
+    if user_id is not None:
         return f"{base}{user_id}"
     return base
 

@@ -129,7 +129,7 @@ def _valid_email(email: str) -> bool:
 
 def get_current_user():
     user_id = session.get('user_id')
-    if not user_id:
+    if user_id is None:
         return None
     user = UserModel.query.filter_by(id=user_id).first()
     if user is None:
@@ -163,7 +163,7 @@ def _password_stamp(user):
 
 def _attach_liked(serialized, post_ids):
     user_id = get_current_user_id()
-    if not user_id or not post_ids:
+    if user_id is None or not post_ids:
         return
     liked = {
         row.post_id
@@ -403,7 +403,7 @@ def get_current_user_info():
 @app.route('/api/update-profile', methods=['PUT'])
 def update_profile():
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
     user = UserModel.query.filter_by(id=user_id).first()
     if user is None:
@@ -467,7 +467,7 @@ def get_user_by_id(id):
 def create_new_post():
     data = get_data()
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized - Please login first'}), 401
 
     user = UserModel.query.filter_by(id=user_id).first()
@@ -528,7 +528,7 @@ def get_all_posts():
 @app.route('/api/user-posts', methods=['GET'])
 def get_user_posts():
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
     posts = (
         PostModel.query.options(joinedload(PostModel.author))
@@ -557,7 +557,7 @@ def get_post_by_id(post_id):
 @app.route('/api/posts/<int:post_id>/like', methods=['POST','OPTIONS'])
 def like_post(post_id):
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
     post = db.session.get(PostModel, post_id)
     if not post:
@@ -601,7 +601,7 @@ def comments(post_id):
     elif request.method == 'POST':
         data = get_data()
         user_id = get_current_user_id()
-        if not user_id:
+        if user_id is None:
             return jsonify({'error': 'Not authorized'}), 401
         post = db.session.get(PostModel, post_id)
         if not post:
@@ -625,7 +625,7 @@ def comments(post_id):
 @cross_origin(supports_credentials=True)
 def delete_post(post_id):
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
 
     post = PostModel.query.filter_by(id=post_id).first()
@@ -646,7 +646,7 @@ def delete_post(post_id):
 @app.route('/api/update-post/<int:post_id>', methods=['PUT'])
 def update_post(post_id):
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
 
     data = get_data()
@@ -679,7 +679,7 @@ def update_post(post_id):
 @app.route('/api/delete-comment/<int:comment_id>', methods=["DELETE"])
 def delete_comment(comment_id):
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
 
     comment = Comment.query.filter_by(id=comment_id).first()
@@ -698,7 +698,7 @@ def delete_comment(comment_id):
 @app.route('/api/update-comment/<int:comment_id>', methods=['PUT'])
 def update_comment(comment_id):
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
 
     data = get_data()
@@ -764,10 +764,10 @@ def get_post_by_slug(slug):
     db.session.commit()
     data = post.serialize()
     user_id = get_current_user_id()
-    if user_id:
+    if user_id is not None:
         data['is_bookmarked'] = Bookmark.query.filter_by(user_id=user_id, post_id=post.id).first() is not None
         data['is_liked'] = Like.query.filter_by(user_id=user_id, post_id=post.id).first() is not None
-        if post.author_id and post.author_id != user_id:
+        if post.author_id is not None and post.author_id != user_id:
             data['is_following_author'] = Follow.query.filter_by(
                 follower_id=user_id, following_id=post.author_id
             ).first() is not None
@@ -786,7 +786,7 @@ def get_author(username):
     data['follower_count'] = follower_count
     follower_id = get_current_user_id()
     data['is_following'] = bool(
-        follower_id
+        follower_id is not None
         and follower_id != user.id
         and Follow.query.filter_by(follower_id=follower_id, following_id=user.id).first()
     )
@@ -807,7 +807,7 @@ def get_author_posts(username):
 @app.route('/api/posts/<int:post_id>/bookmark', methods=['POST', 'DELETE'])
 def bookmark_post(post_id):
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
     post = db.session.get(PostModel, post_id)
     if not post:
@@ -829,7 +829,7 @@ def bookmark_post(post_id):
 @app.route('/api/bookmarks', methods=['GET'])
 def get_bookmarks():
     user_id = get_current_user_id()
-    if not user_id:
+    if user_id is None:
         return jsonify({'error': 'Not authorized'}), 401
     bookmarks = Bookmark.query.filter_by(user_id=user_id).order_by(desc(Bookmark.created_at)).all()
     post_ids = [b.post_id for b in bookmarks]
@@ -849,7 +849,7 @@ def get_bookmarks():
 @app.route('/api/users/<int:user_id>/follow', methods=['POST', 'DELETE'])
 def follow_user(user_id):
     follower_id = get_current_user_id()
-    if not follower_id:
+    if follower_id is None:
         return jsonify({'error': 'Not authorized'}), 401
     if follower_id == user_id:
         return jsonify({'error': 'Cannot follow yourself'}), 400
