@@ -425,3 +425,55 @@ def test_update_profile_workflow_and_guards(client):
     assert login_ok.status_code == 200
 
 
+def test_bookmark_workflow_and_guards(client):
+    # Unauthenticated requests return 401
+    assert client.get('/api/bookmarks').status_code == 401
+    assert client.post('/api/posts/1/bookmark').status_code == 401
+    assert client.delete('/api/posts/1/bookmark').status_code == 401
+
+    # Register user and create published post
+    _register(client, email='reader@example.com', first='Reader', last='One')
+    post_res = _create_post(client, title='Fascinating Article', status='published')
+    post_id = post_res.get_json()['post']['id']
+
+    # Bookmarks list is initially empty
+    init_bookmarks = client.get('/api/bookmarks')
+    assert init_bookmarks.status_code == 200
+    assert len(init_bookmarks.get_json()) == 0
+
+    # Add bookmark via POST
+    bm_add = client.post(f'/api/posts/{post_id}/bookmark')
+    assert bm_add.status_code == 200
+    assert bm_add.get_json()['bookmarked'] is True
+
+    # Duplicate POST is idempotent
+    bm_dup = client.post(f'/api/posts/{post_id}/bookmark')
+    assert bm_dup.status_code == 200
+    assert bm_dup.get_json()['bookmarked'] is True
+
+    # Bookmarks list now contains the post
+    bms = client.get('/api/bookmarks')
+    assert bms.status_code == 200
+    titles = [item['title'] for item in bms.get_json()]
+    assert titles == ['Fascinating Article']
+
+    # Remove bookmark via DELETE
+    bm_del = client.delete(f'/api/posts/{post_id}/bookmark')
+    assert bm_del.status_code == 200
+    assert bm_del.get_json()['bookmarked'] is False
+
+    # Duplicate DELETE is idempotent
+    bm_del_dup = client.delete(f'/api/posts/{post_id}/bookmark')
+    assert bm_del_dup.status_code == 200
+    assert bm_del_dup.get_json()['bookmarked'] is False
+
+    # Bookmarks list is empty again
+    empty_bms = client.get('/api/bookmarks')
+    assert empty_bms.status_code == 200
+    assert len(empty_bms.get_json()) == 0
+
+    # Non-existent post returns 404
+    assert client.post('/api/posts/999999/bookmark').status_code == 404
+    assert client.delete('/api/posts/999999/bookmark').status_code == 404
+
+
