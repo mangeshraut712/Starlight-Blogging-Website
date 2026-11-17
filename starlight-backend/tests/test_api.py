@@ -2,7 +2,7 @@
 import datetime
 
 from app import app as flask_app
-from models import Bookmark, Like, PostModel, UserModel, db
+from models import Bookmark, Follow, Like, PostModel, UserModel, db
 
 _GOOD = 'phrase-one-ok'
 _SHORT = 'short'
@@ -701,6 +701,64 @@ def test_rss_feed_generation(client):
     assert '<title>First RSS Story</title>' in body
     assert '<description><![CDATA[' in body
     assert 'Exciting news for RSS subscribers' in body
+
+
+def test_follow_user_contracts_and_lifecycle(client):
+    """Verify follow and unfollow contracts: authorization, self-follow guard, and lifecycle."""
+    # Anonymous follow and unfollow are rejected with 401
+    assert client.post('/api/users/1/follow').status_code == 401
+    assert client.delete('/api/users/1/follow').status_code == 401
+
+    # Register user 1 and log in
+    u1_res = _register(client, 'follow_u1@example.com', _GOOD, first='Follower', last='One')
+    assert u1_res.status_code == 200
+    u1_id = u1_res.get_json()['uid']
+    _login(client, 'follow_u1@example.com', _GOOD)
+
+    # Self-follow guard returns 400
+    self_res = client.post(f'/api/users/{u1_id}/follow')
+    assert self_res.status_code == 400
+    assert self_res.get_json() == {'error': 'Cannot follow yourself'}
+
+    # Target user not found returns 404
+    missing_res = client.post('/api/users/99999/follow')
+    assert missing_res.status_code == 404
+    assert missing_res.get_json() == {'error': 'User not found'}
+
+    # Register target user 2
+    u2_res = _register(client, 'follow_u2@example.com', _GOOD, first='Followed', last='Two')
+    assert u2_res.status_code == 200
+    u2_id = u2_res.get_json()['uid']
+
+    # Log back in as user 1 to follow user 2
+    _login(client, 'follow_u1@example.com', _GOOD)
+    follow_res = client.post(f'/api/users/{u2_id}/follow')
+    assert follow_res.status_code == 200
+    assert follow_res.get_json() == {'following': True}
+
+    with flask_app.app_context():
+        assert Follow.query.filter_by(follower_id=u1_id, following_id=u2_id).count() == 1
+
+    # Repeat follow is idempotent
+    repeat_res = client.post(f'/api/users/{u2_id}/follow')
+    assert repeat_res.status_code == 200
+    assert repeat_res.get_json() == {'following': True}
+    with flask_app.app_context():
+        assert Follow.query.filter_by(follower_id=u1_id, following_id=u2_id).count() == 1
+
+    # Unfollow returns following: False
+    unfollow_res = client.delete(f'/api/users/{u2_id}/follow')
+    assert unfollow_res.status_code == 200
+    assert unfollow_res.get_json() == {'following': False}
+
+    with flask_app.app_context():
+        assert Follow.query.filter_by(follower_id=u1_id, following_id=u2_id).count() == 0
+
+    # Repeat unfollow is idempotent
+    repeat_unfollow = client.delete(f'/api/users/{u2_id}/follow')
+    assert repeat_unfollow.status_code == 200
+    assert repeat_unfollow.get_json() == {'following': False}
+
 
 
 
