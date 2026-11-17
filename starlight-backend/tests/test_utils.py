@@ -18,6 +18,20 @@ def test_reading_time_uses_word_count():
     assert reading_time_minutes('') == 1
 
 
+def test_reading_time_custom_wpm_and_validation():
+    words = ' '.join(['word'] * 100)
+    assert reading_time_minutes(words, wpm=100) == 1
+    assert reading_time_minutes(words, wpm=50) == 2
+    assert reading_time_minutes(words, wpm=25) == 4
+    assert reading_time_minutes('', wpm=150) == 1
+
+    import pytest
+    with pytest.raises(ValueError, match="wpm must be a positive integer"):
+        reading_time_minutes(words, wpm=0)
+    with pytest.raises(ValueError, match="wpm must be a positive integer"):
+        reading_time_minutes(words, wpm=-10)
+
+
 def test_cdata_safe_breaks_early_terminator():
     assert cdata_safe('end ]]> here') == 'end ]]]]><![CDATA[> here'
     assert cdata_safe('clean\x00null\x0cformfeed') == 'cleannullformfeed'

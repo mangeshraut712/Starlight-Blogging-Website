@@ -65,12 +65,14 @@ def escape_like(value: str) -> str:
     )
 
 
-def reading_time_minutes(html_content: str) -> int:
+def reading_time_minutes(html_content: str, wpm: int = 200) -> int:
+    if wpm <= 0:
+        raise ValueError(f"wpm must be a positive integer, got {wpm}")
     text = re.sub(r'\s+', ' ', html.unescape(_strip_tags(html_content or ''))).strip()
     if not text:
         return 1
     words = len(text.split())
-    return max(1, (words + 199) // 200)
+    return max(1, (words + wpm - 1) // wpm)
 
 
 def cdata_safe(value: str) -> str:
