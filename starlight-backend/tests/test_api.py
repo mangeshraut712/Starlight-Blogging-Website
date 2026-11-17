@@ -298,3 +298,46 @@ def test_author_profile_and_author_posts(client):
     # Non-existent author posts returns 404
     assert client.get('/api/authors/nonexistent_author/posts').status_code == 404
 
+
+def test_follow_user_workflow_and_guards(client):
+    # Unauthenticated follow returns 401
+    assert client.post('/api/users/1/follow').status_code == 401
+    assert client.delete('/api/users/1/follow').status_code == 401
+
+    # Register user 1
+    u1_reg = _register(client, email='user1@example.com', phrase=_GOOD, first='User', last='One')
+    u1_id = u1_reg.get_json()['uid']
+
+    # Cannot follow oneself returns 400
+    self_follow = client.post(f'/api/users/{u1_id}/follow')
+    assert self_follow.status_code == 400
+    assert 'Cannot follow yourself' in self_follow.get_json()['error']
+
+    # Follow non-existent user returns 404
+    assert client.post('/api/users/999999/follow').status_code == 404
+
+    # Register user 2
+    client.post('/api/logout')
+    u2_reg = _register(client, email='user2@example.com', phrase=_GOOD, first='User', last='Two')
+    u2_id = u2_reg.get_json()['uid']
+
+    # User 2 follows User 1
+    res = client.post(f'/api/users/{u1_id}/follow')
+    assert res.status_code == 200
+    assert res.get_json()['following'] is True
+
+    # Duplicate follow is idempotent
+    dup_res = client.post(f'/api/users/{u1_id}/follow')
+    assert dup_res.status_code == 200
+    assert dup_res.get_json()['following'] is True
+
+    # User 2 unfollows User 1
+    unfollow_res = client.delete(f'/api/users/{u1_id}/follow')
+    assert unfollow_res.status_code == 200
+    assert unfollow_res.get_json()['following'] is False
+
+    # Duplicate unfollow is idempotent
+    dup_unfollow = client.delete(f'/api/users/{u1_id}/follow')
+    assert dup_unfollow.status_code == 200
+    assert dup_unfollow.get_json()['following'] is False
+
