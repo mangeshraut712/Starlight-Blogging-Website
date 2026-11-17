@@ -30,15 +30,15 @@ def migrate_schema():
 
 
 def backfill_data():
-    for user in UserModel.query.filter((UserModel.username == None) | (UserModel.username == '')).all():
+    for user in UserModel.query.filter(UserModel.username.is_(None) | (UserModel.username == '')).all():
         user.username = make_username(user.email, user.first, user.last, user.id)
 
     incomplete_posts = PostModel.query.filter(
-        (PostModel.slug == None) | (PostModel.slug == '') |
-        (PostModel.excerpt == None) | (PostModel.excerpt == '') |
-        (PostModel.status == None) | (PostModel.status == '') |
-        (PostModel.view_count == None) |
-        (PostModel.updated_at == None)
+        PostModel.slug.is_(None) | (PostModel.slug == '') |
+        PostModel.excerpt.is_(None) | (PostModel.excerpt == '') |
+        PostModel.status.is_(None) | (PostModel.status == '') |
+        PostModel.view_count.is_(None) |
+        PostModel.updated_at.is_(None)
     ).all()
     for post in incomplete_posts:
         if not post.slug:
