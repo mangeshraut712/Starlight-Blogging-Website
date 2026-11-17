@@ -477,3 +477,80 @@ def test_bookmark_workflow_and_guards(client):
     assert client.delete('/api/posts/999999/bookmark').status_code == 404
 
 
+def test_post_like_toggle_and_get_likes(client):
+    # Unauthenticated like returns 401
+    assert client.post('/api/posts/1/like').status_code == 401
+
+    # Register and create post
+    _register(client, 'author_like@example.com', _GOOD)
+    _login(client, 'author_like@example.com', _GOOD)
+    res = _create_post(client, title='Liking Demo', content='<p>Likes test</p>')
+    assert res.status_code == 200
+    post_id = res.get_json()['post']['id']
+
+    # Initial like returns 'liked'
+    like_res1 = client.post(f'/api/posts/{post_id}/like')
+    assert like_res1.status_code == 200
+    assert like_res1.get_json()['success'] == 'liked'
+
+    # Check post likes count
+    p1 = client.get(f'/api/posts/{post_id}').get_json()
+    assert p1['likes'] == 1
+
+    # Likes endpoint lists 1 like
+    likes_data = client.get(f'/api/posts/{post_id}/likes')
+    assert likes_data.status_code == 200
+    assert len(likes_data.get_json()) == 1
+
+    # Toggling like again unlikes it
+    like_res2 = client.post(f'/api/posts/{post_id}/like')
+    assert like_res2.status_code == 200
+    assert like_res2.get_json()['success'] == 'unliked'
+
+    p2 = client.get(f'/api/posts/{post_id}').get_json()
+    assert p2['likes'] == 0
+
+    # Likes endpoint is empty now
+    assert len(client.get(f'/api/posts/{post_id}/likes').get_json()) == 0
+
+    # Non-existent post returns 404
+    assert client.post('/api/posts/999999/like').status_code == 404
+    assert client.get('/api/posts/999999/likes').status_code == 404
+
+
+def test_platform_stats_and_trending(client):
+    # Stats before post creation
+    stats_initial = client.get('/api/stats')
+    assert stats_initial.status_code == 200
+    data0 = stats_initial.get_json()
+    assert 'writers' in data0
+    assert 'posts' in data0
+    assert 'communities' in data0
+    assert 'comments' in data0
+    assert 'total_likes' in data0
+
+    # Create user and published posts
+    _register(client, 'stats_author@example.com', _GOOD)
+    _login(client, 'stats_author@example.com', _GOOD)
+    _create_post(client, title='Trending Post 1', content='<p>Post 1</p>', label='AI')
+    _create_post(client, title='Trending Post 2', content='<p>Post 2</p>', label='Design')
+
+    stats_after = client.get('/api/stats').get_json()
+    assert stats_after['posts'] >= 2
+    assert stats_after['communities'] >= 2
+
+    # Trending posts returns array with limit bounds
+    trending = client.get('/api/trending?limit=5')
+    assert trending.status_code == 200
+    items = trending.get_json()
+    assert isinstance(items, list)
+    assert len(items) <= 5
+    assert len(items) >= 2
+
+    # Negative or non-integer limit clamps safely
+    trending_clamped = client.get('/api/trending?limit=-10')
+    assert trending_clamped.status_code == 200
+    assert len(trending_clamped.get_json()) >= 1
+
+
+
