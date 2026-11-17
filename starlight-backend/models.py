@@ -161,4 +161,10 @@ PostModel.comment_count = column_property(
 
 @login.user_loader
 def load_user(id):
-    return UserModel.query.get(id)
+    if id is None:
+        return None
+    try:
+        user_id = int(id)
+    except (TypeError, ValueError):
+        return None
+    return db.session.get(UserModel, user_id)
