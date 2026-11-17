@@ -20,6 +20,11 @@ def test_reading_time_uses_word_count():
 
 def test_cdata_safe_breaks_early_terminator():
     assert cdata_safe('end ]]> here') == 'end ]]]]><![CDATA[> here'
+    assert cdata_safe('clean\x00null\x0cformfeed') == 'cleannullformfeed'
+
+
+def test_make_excerpt_separates_adjacent_block_tags():
+    assert make_excerpt('<p>Paragraph one</p><p>Paragraph two</p>') == 'Paragraph one Paragraph two'
 
 
 

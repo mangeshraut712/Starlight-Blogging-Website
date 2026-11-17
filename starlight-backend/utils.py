@@ -3,6 +3,9 @@ import re
 import unicodedata
 
 
+_INVALID_XML_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
 def _strip_tags(html_content: str) -> str:
     out = []
     in_tag = False
@@ -11,6 +14,7 @@ def _strip_tags(html_content: str) -> str:
             in_tag = True
         elif ch == ">":
             in_tag = False
+            out.append(" ")
         elif not in_tag:
             out.append(ch)
     return "".join(out)
@@ -62,7 +66,7 @@ def escape_like(value: str) -> str:
 
 
 def reading_time_minutes(html_content: str) -> int:
-    text = re.sub(r'\s+', ' ', _strip_tags(html_content or '')).strip()
+    text = re.sub(r'\s+', ' ', html.unescape(_strip_tags(html_content or ''))).strip()
     if not text:
         return 1
     words = len(text.split())
@@ -70,5 +74,6 @@ def reading_time_minutes(html_content: str) -> int:
 
 
 def cdata_safe(value: str) -> str:
-    """Keep user text from breaking out of an XML CDATA section."""
-    return (value or '').replace(']]>', ']]]]><![CDATA[>')
+    """Keep user text from breaking out of an XML CDATA section and strip invalid XML control characters."""
+    cleaned = _INVALID_XML_CHARS.sub("", value or "")
+    return cleaned.replace(']]>', ']]]]><![CDATA[>')
