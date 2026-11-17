@@ -2,7 +2,7 @@
 import datetime
 
 from app import app as flask_app
-from models import Bookmark, Like, PostModel, db
+from models import Bookmark, Like, PostModel, UserModel, db
 
 _GOOD = 'phrase-one-ok'
 _SHORT = 'short'
@@ -259,3 +259,42 @@ def test_author_can_still_work_with_their_own_draft(client):
     assert client.post(f'/api/posts/{post_id}/bookmark').status_code == 200
     titles = [item['title'] for item in client.get('/api/bookmarks').get_json()]
     assert titles == ['My draft']
+
+
+def test_author_profile_and_author_posts(client):
+    """GET /api/authors/<username> and /api/authors/<username>/posts contracts."""
+    reg = _register(client, email='marie@example.com', first='Marie', last='Curie')
+    uid = reg.get_json()['uid']
+
+    with flask_app.app_context():
+        user = db.session.get(UserModel, uid)
+        user.username = 'mariecurie'
+        db.session.commit()
+
+    # Create one published post and one draft
+    _create_post(client, title='Radioactivity Discoveries', status='published')
+    _create_post(client, title='Private Lab Notes', status='draft')
+
+    # Query author profile
+    profile = client.get('/api/authors/mariecurie')
+    assert profile.status_code == 200
+    pdata = profile.get_json()
+    assert pdata['first'] == 'Marie'
+    assert pdata['last'] == 'Curie'
+    assert pdata['post_count'] == 1  # Only published count
+    assert pdata['follower_count'] == 0
+
+    # Non-existent author returns 404
+    assert client.get('/api/authors/nonexistent_author').status_code == 404
+
+    # Query author posts: must only contain published posts
+    posts_res = client.get('/api/authors/mariecurie/posts')
+    assert posts_res.status_code == 200
+    posts_data = posts_res.get_json()
+    assert posts_data['total'] == 1
+    assert len(posts_data['posts']) == 1
+    assert posts_data['posts'][0]['title'] == 'Radioactivity Discoveries'
+
+    # Non-existent author posts returns 404
+    assert client.get('/api/authors/nonexistent_author/posts').status_code == 404
+
