@@ -553,4 +553,70 @@ def test_platform_stats_and_trending(client):
     assert len(trending_clamped.get_json()) >= 1
 
 
+def test_comments_crud_authorization_and_sanitization(client):
+    # Register author and create post
+    _register(client, 'comm_author1@example.com', _GOOD)
+    _login(client, 'comm_author1@example.com', _GOOD)
+    res = _create_post(client, title='Discussion Topic', content='<p>Let us talk</p>')
+    assert res.status_code == 200
+    post_id = res.get_json()['post']['id']
+
+    # Logout to test unauthenticated comment submission on existing post
+    client.post('/api/logout')
+    assert client.post(f'/api/posts/{post_id}/comments', json={'body': 'Nice'}).status_code == 401
+
+    # Login back
+    _login(client, 'comm_author1@example.com', _GOOD)
+
+    # Non-existent post returns 404
+    assert client.post('/api/posts/999999/comments', json={'body': 'Hello'}).status_code == 404
+    assert client.get('/api/posts/999999/comments').status_code == 404
+
+    # Empty comment body returns 400
+    assert client.post(f'/api/posts/{post_id}/comments', json={'body': ''}).status_code == 400
+    assert client.post(f'/api/posts/{post_id}/comments', json={'body': '   <p></p>  '}).status_code == 400
+
+    # Valid comment with HTML strips HTML
+    created = client.post(
+        f'/api/posts/{post_id}/comments',
+        json={'body': '<b>Bold comment</b> and normal text'}
+    )
+    assert created.status_code == 200
+    comm_data = created.get_json()
+    assert '<b>' not in comm_data['body']
+    assert 'Bold comment and normal text' in comm_data['body']
+    comment_id = comm_data['id']
+
+    # GET comments lists the created comment
+    listing = client.get(f'/api/posts/{post_id}/comments')
+    assert listing.status_code == 200
+    assert len(listing.get_json()) == 1
+
+    # Register user 2 and attempt unauthorized update and delete
+    _register(client, 'comm_user2@example.com', _GOOD)
+    _login(client, 'comm_user2@example.com', _GOOD)
+    unauth_edit = client.put(f'/api/update-comment/{comment_id}', json={'body': 'Hacked body'})
+    assert unauth_edit.status_code == 403
+    unauth_del = client.delete(f'/api/delete-comment/{comment_id}')
+    assert unauth_del.status_code == 403
+
+    # Log back in as user 1 and update comment
+    _login(client, 'comm_author1@example.com', _GOOD)
+    updated = client.put(f'/api/update-comment/{comment_id}', json={'body': 'Updated my thought'})
+    assert updated.status_code == 200
+    assert updated.get_json()['body'] == 'Updated my thought'
+
+    # Delete comment
+    del_res = client.delete(f'/api/delete-comment/{comment_id}')
+    assert del_res.status_code == 200
+
+    # Comments list is empty again
+    assert len(client.get(f'/api/posts/{post_id}/comments').get_json()) == 0
+
+    # Deleting or updating non-existent comment returns 404
+    assert client.delete(f'/api/delete-comment/{comment_id}').status_code == 404
+    assert client.put(f'/api/update-comment/{comment_id}', json={'body': 'Test'}).status_code == 404
+
+
+
 
