@@ -341,3 +341,87 @@ def test_follow_user_workflow_and_guards(client):
     assert dup_unfollow.status_code == 200
     assert dup_unfollow.get_json()['following'] is False
 
+
+def test_update_profile_workflow_and_guards(client):
+    # Unauthenticated request returns 401
+    assert client.put('/api/update-profile', json={'first': 'Alice'}).status_code == 401
+
+    # Register initial user
+    u1_reg = _register(client, email='profileuser@example.com', phrase=_GOOD, first='Alice', last='Smith')
+    u1_username = u1_reg.get_json()['username']
+
+    # Empty first name returns 400
+    bad_name = client.put('/api/update-profile', json={'first': '   ', 'last': 'Smith'})
+    assert bad_name.status_code == 400
+    assert 'First and last name must be 1-100 characters' in bad_name.get_json()['error']
+
+    # Excessively long last name returns 400
+    long_last = client.put('/api/update-profile', json={'first': 'Alice', 'last': 'x' * 101})
+    assert long_last.status_code == 400
+    assert 'First and last name must be 1-100 characters' in long_last.get_json()['error']
+
+    # Bio exceeding MAX_BIO_LENGTH (2000 chars) returns 400
+    long_bio = client.put('/api/update-profile', json={'first': 'Alice', 'last': 'Smith', 'bio': 'a' * 2001})
+    assert long_bio.status_code == 400
+    assert 'Bio is too long' in long_bio.get_json()['error']
+
+    # Password update with short password (< 8 chars) returns 400
+    short_pw = client.put('/api/update-profile', json={
+        'first': 'Alice',
+        'last': 'Smith',
+        'password': 'short',
+        'old_password': _GOOD,
+    })
+    assert short_pw.status_code == 400
+    assert 'Password must be at least 8 characters' in short_pw.get_json()['error']
+
+    # Password update with wrong current password returns 400
+    wrong_pw = client.put('/api/update-profile', json={
+        'first': 'Alice',
+        'last': 'Smith',
+        'password': 'NewPassword123!',
+        'old_password': 'WrongPassword!',
+    })
+    assert wrong_pw.status_code == 400
+    assert 'Current password is incorrect' in wrong_pw.get_json()['error']
+
+    # Register second user to test username collision
+    client.post('/api/logout')
+    _register(client, email='seconduser@example.com', phrase=_GOOD, first='Bob', last='Jones')
+    # Try updating Bob's username to Alice's username
+    conflict = client.put('/api/update-profile', json={
+        'first': 'Bob',
+        'last': 'Jones',
+        'username': u1_username,
+    })
+    assert conflict.status_code == 409
+    assert 'Username already taken' in conflict.get_json()['error']
+
+    # Successful profile and password update
+    new_phrase = 'BrandNewPassword999!'
+    ok_res = client.put('/api/update-profile', json={
+        'first': 'Robert',
+        'last': 'Jones Jr.',
+        'bio': 'Software engineer and author.',
+        'username': 'bobjonesjr',
+        'password': new_phrase,
+        'old_password': _GOOD,
+    })
+    assert ok_res.status_code == 200
+    data = ok_res.get_json()
+    assert data['message'] == 'Profile updated successfully!'
+    assert data['user']['first'] == 'Robert'
+    assert data['user']['last'] == 'Jones Jr.'
+    assert data['user']['username'] == 'bobjonesjr'
+    assert data['user']['bio'] == 'Software engineer and author.'
+
+    # Re-login with old password fails
+    client.post('/api/logout')
+    login_old = _login(client, email='seconduser@example.com', phrase=_GOOD)
+    assert login_old.status_code == 401
+
+    # Re-login with new password succeeds
+    login_ok = _login(client, email='seconduser@example.com', phrase=new_phrase)
+    assert login_ok.status_code == 200
+
+
