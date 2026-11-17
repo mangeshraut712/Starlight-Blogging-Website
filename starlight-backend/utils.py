@@ -3,7 +3,7 @@ import re
 import unicodedata
 
 
-_INVALID_XML_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+_INVALID_XML_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
 def _strip_tags(html_content: str) -> str:

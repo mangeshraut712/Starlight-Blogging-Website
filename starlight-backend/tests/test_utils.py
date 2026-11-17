@@ -34,7 +34,22 @@ def test_reading_time_custom_wpm_and_validation():
 
 def test_cdata_safe_breaks_early_terminator():
     assert cdata_safe('end ]]> here') == 'end ]]]]><![CDATA[> here'
-    assert cdata_safe('clean\x00null\x0cformfeed') == 'cleannullformfeed'
+    assert cdata_safe('clean\x00null\x0cformfeed\x7fdel') == 'cleannullformfeeddel'
+
+
+def test_slugify_and_make_unique_slug():
+    from utils import make_unique_slug, make_username, slugify
+    assert slugify('Hello, World! 123') == 'hello-world-123'
+    assert slugify('  Spaced  Out  ') == 'spaced-out'
+    assert slugify('Crème Brûlée') == 'creme-brulee'
+    assert slugify(None) == ''
+
+    assert make_unique_slug('My First Post', 42) == 'my-first-post-42'
+    assert make_unique_slug('', 42) == 'post-42'
+    assert make_unique_slug('No ID') == 'no-id'
+
+    assert make_username('ada@lovelace.org', 'Ada', 'Lovelace', 1) == 'adalovelace1'
+    assert make_username('anonymous@domain.test', '', '', 99) == 'anonymous99'
 
 
 def test_make_excerpt_separates_adjacent_block_tags():
