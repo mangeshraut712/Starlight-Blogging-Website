@@ -618,5 +618,91 @@ def test_comments_crud_authorization_and_sanitization(client):
     assert client.put(f'/api/update-comment/{comment_id}', json={'body': 'Test'}).status_code == 404
 
 
+def test_search_posts_queries_and_filters(client):
+    """Verify search endpoint contracts: validation, query matching, and label filtering."""
+    # Both missing returns 400
+    assert client.get('/api/search').status_code == 400
+    assert client.get('/api/search?q=   &label=  ').status_code == 400
+
+    # Overlong query returns 400
+    long_query = 'a' * 201
+    assert client.get(f'/api/search?q={long_query}').status_code == 400
+
+    # Register author and create sample posts
+    _register(client, 'search_author@example.com', _GOOD, first='Search', last='Expert')
+    _login(client, 'search_author@example.com', _GOOD)
+    _create_post(
+        client,
+        title='Quantum Computing Breakthrough',
+        content='<p>Superposition and entanglement details</p>',
+        label='Technology',
+        status='published'
+    )
+    _create_post(
+        client,
+        title='Culinary Wonders of Tokyo',
+        content='<p>Ramen and sushi exploration</p>',
+        label='Food',
+        status='published'
+    )
+    # Draft post should never appear in search results
+    _create_post(
+        client,
+        title='Secret Quantum Project',
+        content='<p>Unpublished notes</p>',
+        label='Technology',
+        status='draft'
+    )
+
+    # Search by keyword
+    search_res = client.get('/api/search?q=Quantum')
+    assert search_res.status_code == 200
+    data = search_res.get_json()
+    assert data['count'] == 1
+    assert data['results'][0]['title'] == 'Quantum Computing Breakthrough'
+
+    # Search by label filter
+    label_res = client.get('/api/search?label=Food')
+    assert label_res.status_code == 200
+    food_data = label_res.get_json()
+    assert food_data['count'] == 1
+    assert food_data['results'][0]['title'] == 'Culinary Wonders of Tokyo'
+
+    # Filter with both query and label
+    combined_res = client.get('/api/search?q=Tokyo&label=Food')
+    assert combined_res.status_code == 200
+    assert combined_res.get_json()['count'] == 1
+
+    # Mismatched combination returns empty list
+    mismatch_res = client.get('/api/search?q=Quantum&label=Food')
+    assert mismatch_res.status_code == 200
+    assert mismatch_res.get_json()['count'] == 0
+
+
+def test_rss_feed_generation(client):
+    """Verify RSS 2.0 XML generation, content-type, and post inclusion."""
+    _register(client, 'rss_author@example.com', _GOOD, first='RSS', last='Writer')
+    _login(client, 'rss_author@example.com', _GOOD)
+    _create_post(
+        client,
+        title='First RSS Story',
+        content='<p>Exciting news for RSS subscribers</p>',
+        label='News',
+        status='published'
+    )
+
+    response = client.get('/api/feed/rss')
+    assert response.status_code == 200
+    assert response.headers['Content-Type'].startswith('application/rss+xml')
+    body = response.data.decode('utf-8')
+    assert '<?xml version="1.0" encoding="UTF-8"?>' in body
+    assert '<rss version="2.0">' in body
+    assert '<title>StarLight Blog</title>' in body
+    assert '<title>First RSS Story</title>' in body
+    assert '<description><![CDATA[' in body
+    assert 'Exciting news for RSS subscribers' in body
+
+
+
 
 
