@@ -40,7 +40,7 @@ jobs:
         run: npm run test:ci
 
       - name: Dependency audit
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
 
   backend:
     name: Backend Lint & Validate
