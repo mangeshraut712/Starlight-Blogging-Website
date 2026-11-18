@@ -1,10 +1,14 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, LoginManager
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import backref, column_property
 from utils import reading_time_minutes
+
+
+def _utcnow():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 login = LoginManager()
 db = SQLAlchemy()
@@ -66,8 +70,8 @@ class PostModel(db.Model):
     view_count = db.Column(db.Integer, nullable=False, default=0)
     label = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='published')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
+    updated_at = db.Column(db.DateTime, default=_utcnow, onupdate=_utcnow)
 
     def serialize(self, include_content=True):
         author_username = self.author.username if self.author else None
@@ -115,7 +119,7 @@ class Comment(db.Model):
     author_name = db.Column(db.String(255), nullable=False)
     author = db.relationship('UserModel', backref=backref('user_comments', lazy=True))
     body = db.Column(db.String(1000), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     def serialize(self):
         return {
@@ -133,7 +137,7 @@ class Bookmark(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     __table_args__ = (db.UniqueConstraint('user_id', 'post_id', name='unique_bookmark'),)
 
@@ -146,7 +150,7 @@ class Follow(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     follower_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     following_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     __table_args__ = (db.UniqueConstraint('follower_id', 'following_id', name='unique_follow'),)
 

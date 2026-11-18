@@ -764,3 +764,165 @@ def test_follow_user_contracts_and_lifecycle(client):
 
 
 
+
+
+def test_root_health_auth_state_and_users_routes(client, monkeypatch):
+    """Verify root, health (200 and 503), /api/data, /api/current_user, and /api/users endpoints."""
+    root_res = client.get('/')
+    assert root_res.status_code == 200
+    assert root_res.get_json()['status'] == 'Running'
+
+    health_ok = client.get('/api/health')
+    assert health_ok.status_code == 200
+    assert health_ok.get_json()['status'] == 'healthy'
+    assert health_ok.get_json()['database'] == 'connected'
+
+    # Simulate DB failure on /api/health
+    def _boom(*_args, **_kwargs):
+        raise RuntimeError('db down')
+
+    monkeypatch.setattr(db.session, 'execute', _boom)
+    health_err = client.get('/api/health')
+    assert health_err.status_code == 503
+    assert health_err.get_json()['status'] == 'unhealthy'
+    monkeypatch.undo()
+
+    # Anonymous auth state checks
+    assert client.get('/api/data').status_code == 404
+    assert client.get('/api/current_user').status_code == 401
+    assert client.get('/api/users').status_code == 401
+    assert client.get('/api/users/99999').status_code == 404
+
+    reg = _register(client, 'directory@example.com', _GOOD, first='Dir', last='User')
+    uid = int(reg.get_json()['uid'])
+
+    assert client.get('/api/data').status_code == 200
+    me = client.get('/api/current_user')
+    assert me.status_code == 200
+    assert me.get_json()['email'] == 'directory@example.com'
+
+    users_list = client.get('/api/users')
+    assert users_list.status_code == 200
+    items = users_list.get_json()
+    assert len(items) == 1
+    assert 'email' not in items[0]  # public serialization hides email
+
+    by_id = client.get(f'/api/users/{uid}')
+    assert by_id.status_code == 200
+    assert by_id.get_json()['first'] == 'Dir'
+    assert 'email' not in by_id.get_json()
+
+
+def test_pagination_zero_and_sorting_modes(client):
+    """Verify ?page=0 clamps to page 1 paginated response and all sort modes succeed."""
+    _register(client, 'pager@example.com', _GOOD, first='Page', last='Author')
+    p1 = _create_post(client, title='Zeta Post', content='<p>Body one</p>', label='Tech').get_json()['post']
+    p2 = _create_post(client, title='Alpha Post', content='<p>Body two</p>', label='Tech').get_json()['post']
+    client.post(f"/api/posts/{p2['id']}/like")
+
+    page_zero = client.get('/api/posts?page=0&per_page=1')
+    assert page_zero.status_code == 200
+    payload = page_zero.get_json()
+    assert isinstance(payload, dict)
+    assert payload['page'] == 1
+    assert payload['per_page'] == 1
+    assert payload['total'] == 2
+    assert payload['has_more'] is True
+
+    alpha = client.get('/api/posts?sort=alphabetical').get_json()
+    assert [item['title'] for item in alpha] == ['Alpha Post', 'Zeta Post']
+
+    least = client.get('/api/posts?sort=least_liked').get_json()
+    assert least[0]['id'] == p1['id']
+
+    trending = client.get('/api/posts?sort=trending').get_json()
+    assert trending[0]['id'] == p2['id']
+
+
+def test_update_post_status_label_and_slug_contracts(client):
+    """Verify update_post supports publishing drafts, updating labels, and rejecting invalid inputs."""
+    assert client.put('/api/update-post/1', json={'title': 'T', 'content': 'C'}).status_code == 401
+
+    _register(client, 'editor@example.com', _GOOD, first='Edit', last='Owner')
+    draft = _create_post(
+        client, title='Initial Draft', content='<p>Draft text</p>', label='Notes', status='draft'
+    ).get_json()['post']
+
+    # Invalid status and label rejected with 400
+    bad_status = client.put(
+        f"/api/update-post/{draft['id']}",
+        json={'title': 'Valid', 'content': '<p>Valid</p>', 'status': 'archived'},
+    )
+    assert bad_status.status_code == 400
+
+    bad_label = client.put(
+        f"/api/update-post/{draft['id']}",
+        json={'title': 'Valid', 'content': '<p>Valid</p>', 'label': '   '},
+    )
+    assert bad_label.status_code == 400
+
+    # Publish draft and update community label + regenerate slug
+    published_res = client.put(
+        f"/api/update-post/{draft['id']}",
+        json={
+            'title': 'Published Launch Post',
+            'content': '<p>Ready for everyone</p>',
+            'status': 'published',
+            'label': 'Announcements',
+        },
+    )
+    assert published_res.status_code == 200
+    updated = published_res.get_json()
+    assert updated['status'] == 'published'
+    assert updated['label'] == 'Announcements'
+    assert updated['slug'].startswith('published-launch-post')
+
+    # Slug lookup increments view_count and populates reader flags
+    _register(client, 'reader2@example.com', _GOOD, first='Read', last='Two')
+    client.post(f"/api/posts/{draft['id']}/bookmark")
+    client.post(f"/api/posts/{draft['id']}/like")
+    client.post(f"/api/users/{draft['author_id']}/follow")
+
+    slug_res = client.get(f"/api/posts/slug/{updated['slug']}")
+    assert slug_res.status_code == 200
+    slug_data = slug_res.get_json()
+    assert slug_data['view_count'] >= 1
+    assert slug_data['is_bookmarked'] is True
+    assert slug_data['is_liked'] is True
+    assert slug_data['is_following_author'] is True
+
+    # Non-owner cannot edit
+    forbidden = client.put(
+        f"/api/update-post/{draft['id']}",
+        json={'title': 'Hijack', 'content': '<p>No</p>'},
+    )
+    assert forbidden.status_code == 403
+
+
+def test_password_reset_validation_and_enumeration_safety(client):
+    """Verify forgot_password and reset_password validation guards."""
+    assert client.post('/api/forgot_password', json={}).status_code == 400
+
+    # Unknown email returns generic 200 without leaking a reset_token
+    unknown = client.post('/api/forgot_password', json={'email': 'nobody@example.com'})
+    assert unknown.status_code == 200
+    assert 'reset_token' not in unknown.get_json()
+
+    _register(client, 'resetme@example.com', _GOOD, first='Reset', last='Me')
+    forgot = client.post('/api/forgot_password', json={'email': 'resetme@example.com'})
+    token = forgot.get_json()['reset_token']
+
+    # Validation failures on reset_password
+    assert client.post('/api/reset_password', json={}).status_code == 400
+    assert client.post(
+        '/api/reset_password',
+        json={'token': token, 'new_password': _SHORT, 'confirm_password': _SHORT},
+    ).status_code == 400
+    assert client.post(
+        '/api/reset_password',
+        json={'token': token, 'new_password': _UPDATED, 'confirm_password': 'different-password'},
+    ).status_code == 400
+    assert client.post(
+        '/api/reset_password',
+        json={'token': 'tampered-invalid-token', 'new_password': _UPDATED, 'confirm_password': _UPDATED},
+    ).status_code == 400
