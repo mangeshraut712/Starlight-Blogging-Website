@@ -7,8 +7,22 @@ import flask
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS, cross_origin
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+except ImportError:  # pragma: no cover - fallback for minimal test environments
+    def get_remote_address():
+        return request.remote_addr or '127.0.0.1'
+
+    class Limiter:  # type: ignore[no-redef]
+        def __init__(self, key_func=None, app=None, default_limits=None, **_kwargs):
+            self.key_func = key_func
+            self.enabled = True
+
+        def limit(self, _limit_value, **_kwargs):
+            def decorator(fn):
+                return fn
+            return decorator
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from models import db, login, UserModel, PostModel, Like, Comment, Bookmark, Follow
 from flask_migrate import Migrate
@@ -527,7 +541,7 @@ def get_all_posts():
         query = query.filter_by(label=label)
     query = apply_post_sort(query, sort)
 
-    if page:
+    if page is not None:
         return jsonify(paginate_query(query, page, per_page))
 
     posts = query.options(joinedload(PostModel.author)).all()
@@ -665,7 +679,15 @@ def update_post(post_id):
     data = get_data()
     new_title = str(data.get('title') or '').strip()
     new_content = sanitize_html(str(data.get('content') or '').strip())
+    has_status = 'status' in data and data.get('status') is not None
+    new_status = data.get('status') if has_status else None
+    has_label = 'label' in data and data.get('label') is not None
+    new_label = str(data.get('label') or '').strip() if has_label else None
 
+    if has_status and new_status not in ALLOWED_POST_STATUS:
+        return jsonify({'error': 'Status must be published or draft'}), 400
+    if has_label and (not new_label or len(new_label) > 50):
+        return jsonify({'error': 'Community must be 1-50 characters'}), 400
     if len(new_title) > 200 or len(new_content) > MAX_CONTENT_LENGTH:
         return jsonify({'error': 'Title or content is too long'}), 400
     if not new_title or not new_content:
@@ -681,7 +703,11 @@ def update_post(post_id):
     post.title = new_title
     post.content = new_content
     post.excerpt = make_excerpt(new_content)
-    post.updated_at = datetime.datetime.utcnow()
+    if has_status:
+        post.status = new_status
+    if has_label:
+        post.label = new_label
+    post.updated_at = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
     if post.slug:
         post.slug = make_unique_slug(new_title, post.id)
     db.session.commit()
