@@ -139,7 +139,8 @@ MAX_COMMENT_LENGTH = 1000
 ALLOWED_POST_STATUS = {'published', 'draft'}
 
 def get_data():
-    return request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    return data if isinstance(data, dict) else {}
 
 def _valid_email(email: str) -> bool:
     """Reject malformed addresses without a backtracking regular expression."""
@@ -306,8 +307,11 @@ def search_posts():
 @limiter.limit('10 per minute')
 def login():
     data = get_data()
-    email = data.get('email', '').lower().strip()
+    email = data.get('email', '')
     password = data.get('password', '')
+    if not isinstance(email, str) or not isinstance(password, str):
+        return jsonify({'error': 'Email and password must be strings'}), 400
+    email = email.lower().strip()
     user = UserModel.query.filter_by(email=email).first()
     if user and user.check_password(password):
         _start_session(user)
@@ -368,9 +372,10 @@ def logout():
 @limiter.limit('5 per minute')
 def forgot_password():
     data = get_data()
-    email = data.get('email', '').lower().strip()
-    if not email:
+    email = data.get('email', '')
+    if not isinstance(email, str) or not email.strip():
         return jsonify({'error': 'Email is required'}), 400
+    email = email.lower().strip()
 
     user = UserModel.query.filter_by(email=email).first()
     response = {'message': 'If an account exists for this email, password reset instructions have been sent.'}
