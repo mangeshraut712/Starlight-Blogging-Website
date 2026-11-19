@@ -56,3 +56,15 @@ def test_migrate_schema_idempotency(client):
     """Running migrate_schema on an up-to-date schema is a safe no-op."""
     with flask_app.app_context():
         migrate_schema()
+
+
+def test_column_addition_types_match_the_models_on_postgresql():
+    """Added columns use the same base type PostgreSQL gets for the model (no DATETIME)."""
+    from sqlalchemy.dialects import postgresql
+
+    from schema_migrate import COLUMN_ADDITIONS
+
+    tables = {"users": UserModel.__table__, "posts": PostModel.__table__}
+    for table, column, ddl_type in COLUMN_ADDITIONS:
+        compiled = tables[table].c[column].type.compile(dialect=postgresql.dialect())
+        assert ddl_type.split("(")[0].split()[0] == compiled.split("(")[0].split()[0], (table, column)

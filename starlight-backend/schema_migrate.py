@@ -3,24 +3,26 @@ from models import db, UserModel, PostModel
 from utils import make_unique_slug, make_excerpt, make_username
 
 
+# Raw DDL types must be valid on both SQLite (local) and PostgreSQL (production).
+COLUMN_ADDITIONS = [
+    ('users', 'username', 'VARCHAR(80)'),
+    ('users', 'bio', 'TEXT'),
+    ('users', 'avatar_url', 'VARCHAR(500)'),
+    ('users', 'session_version', 'INTEGER NOT NULL DEFAULT 0'),
+    ('posts', 'slug', 'VARCHAR(200)'),
+    ('posts', 'excerpt', 'TEXT'),
+    ('posts', 'cover_image', 'VARCHAR(500)'),
+    ('posts', 'view_count', 'INTEGER DEFAULT 0'),
+    ('posts', 'status', "VARCHAR(20) DEFAULT 'published'"),
+    ('posts', 'updated_at', 'TIMESTAMP'),
+]
+
+
 def migrate_schema():
     inspector = inspect(db.engine)
     tables = inspector.get_table_names()
 
-    column_additions = [
-        ('users', 'username', 'VARCHAR(80)'),
-        ('users', 'bio', 'TEXT'),
-        ('users', 'avatar_url', 'VARCHAR(500)'),
-        ('users', 'session_version', 'INTEGER NOT NULL DEFAULT 0'),
-        ('posts', 'slug', 'VARCHAR(200)'),
-        ('posts', 'excerpt', 'TEXT'),
-        ('posts', 'cover_image', 'VARCHAR(500)'),
-        ('posts', 'view_count', 'INTEGER DEFAULT 0'),
-        ('posts', 'status', "VARCHAR(20) DEFAULT 'published'"),
-        ('posts', 'updated_at', 'DATETIME'),
-    ]
-
-    for table, column, col_type in column_additions:
+    for table, column, col_type in COLUMN_ADDITIONS:
         if table not in tables:
             continue
         existing = {c['name'] for c in inspector.get_columns(table)}
