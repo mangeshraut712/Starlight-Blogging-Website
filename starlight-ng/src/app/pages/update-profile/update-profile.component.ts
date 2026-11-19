@@ -40,6 +40,9 @@ Update: any;
         this.user.first = data.first;
         this.user.last = data.last;
         this.user.id = data.id;
+        // The form has no bio/username inputs; keep them so saving does not clear them.
+        this.user.bio = data.bio;
+        this.user.username = data.username;
         console.log("gerUserData return: ", this.user);
       }
     )
