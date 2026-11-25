@@ -1,3 +1,4 @@
+import html
 import re
 
 import bleach
@@ -14,7 +15,7 @@ ALLOWED_ATTRS = {
 }
 ALLOWED_PROTOCOLS = ['http', 'https', 'mailto']
 
-_ANCHOR_RE = re.compile(r'<a\b[^>]*>', re.IGNORECASE)
+_ANCHOR_RE = re.compile(r'<a\b(?:"[^"]*"|\'[^\']*\'|[^>"\'])*>', re.IGNORECASE)
 _REL_RE = re.compile(r'\brel\s*=\s*(["\'])(.*?)\1', re.IGNORECASE)
 _DROP_BLOCKS = re.compile(r'<(script|style)\b[^>]*>.*?</\1\s*>', re.IGNORECASE | re.DOTALL)
 _DROP_UNCLOSED = re.compile(r'<(script|style)\b[^>]*>.*', re.IGNORECASE | re.DOTALL)
@@ -67,4 +68,5 @@ def strip_html(value: str) -> str:
         protocols=[],
         strip=True,
     )
-    return re.sub(r'\s+', ' ', text).strip()
+    # bleach returns serialized HTML; decode entities so callers get plain text.
+    return re.sub(r'\s+', ' ', html.unescape(text)).strip()
