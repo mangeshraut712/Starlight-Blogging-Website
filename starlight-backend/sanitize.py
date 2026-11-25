@@ -1,4 +1,3 @@
-import html
 import re
 
 import bleach
@@ -68,5 +67,4 @@ def strip_html(value: str) -> str:
         protocols=[],
         strip=True,
     )
-    # bleach returns serialized HTML; decode entities so callers get plain text.
-    return re.sub(r'\s+', ' ', html.unescape(text)).strip()
+    return re.sub(r'\s+', ' ', text).strip()
