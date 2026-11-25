@@ -43,19 +43,18 @@ class _AnchorRelFilter(html5lib_shim.Filter):
             yield token
 
 
-_CLEANER = Cleaner(
-    tags=ALLOWED_TAGS,
-    attributes=ALLOWED_ATTRS,
-    protocols=ALLOWED_PROTOCOLS,
-    strip=True,
-    filters=[_AnchorRelFilter],
-)
-
-
 def sanitize_html(html: str) -> str:
     if not html:
         return ''
-    return _CLEANER.clean(_drop_active_content(html))
+    # bleach's Cleaner is not thread-safe, so build one per call like bleach.clean does.
+    cleaner = Cleaner(
+        tags=ALLOWED_TAGS,
+        attributes=ALLOWED_ATTRS,
+        protocols=ALLOWED_PROTOCOLS,
+        strip=True,
+        filters=[_AnchorRelFilter],
+    )
+    return cleaner.clean(_drop_active_content(html))
 
 
 def strip_html(value: str) -> str:
