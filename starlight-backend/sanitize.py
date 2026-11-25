@@ -2,6 +2,8 @@ import html
 import re
 
 import bleach
+from bleach import html5lib_shim
+from bleach.sanitizer import Cleaner
 
 ALLOWED_TAGS = [
     'p', 'br', 'strong', 'em', 'u', 'b', 'i',
@@ -15,8 +17,6 @@ ALLOWED_ATTRS = {
 }
 ALLOWED_PROTOCOLS = ['http', 'https', 'mailto']
 
-_ANCHOR_RE = re.compile(r'<a\b(?:"[^"]*"|\'[^\']*\'|[^>"\'])*>', re.IGNORECASE)
-_REL_RE = re.compile(r'\brel\s*=\s*(["\'])(.*?)\1', re.IGNORECASE)
 _DROP_BLOCKS = re.compile(r'<(script|style)\b[^>]*>.*?</\1\s*>', re.IGNORECASE | re.DOTALL)
 _DROP_UNCLOSED = re.compile(r'<(script|style)\b[^>]*>.*', re.IGNORECASE | re.DOTALL)
 
@@ -27,34 +27,35 @@ def _drop_active_content(value: str) -> str:
     return _DROP_UNCLOSED.sub('', without)
 
 
-def _ensure_anchor_rel(clean_html: str) -> str:
-    def fix(match: re.Match) -> str:
-        tag = match.group(0)
-        rel_match = _REL_RE.search(tag)
-        if not rel_match:
-            return tag[:-1] + ' rel="noopener noreferrer">'
-        tokens = rel_match.group(2).split()
-        for token in ('noopener', 'noreferrer'):
-            if token not in tokens:
-                tokens.append(token)
-        quote = rel_match.group(1)
-        replacement = f'rel={quote}{" ".join(tokens)}{quote}'
-        return tag[:rel_match.start()] + replacement + tag[rel_match.end():]
+class _AnchorRelFilter(html5lib_shim.Filter):
+    """Add rel="noopener noreferrer" to every <a> in bleach's token stream."""
 
-    return _ANCHOR_RE.sub(fix, clean_html)
+    def __iter__(self):
+        for token in super().__iter__():
+            if token['type'] in ('StartTag', 'EmptyTag') and token['name'] == 'a':
+                attrs = dict(token['data'])
+                tokens = attrs.get((None, 'rel'), '').split()
+                for value in ('noopener', 'noreferrer'):
+                    if value not in tokens:
+                        tokens.append(value)
+                attrs[(None, 'rel')] = ' '.join(tokens)
+                token['data'] = attrs
+            yield token
+
+
+_CLEANER = Cleaner(
+    tags=ALLOWED_TAGS,
+    attributes=ALLOWED_ATTRS,
+    protocols=ALLOWED_PROTOCOLS,
+    strip=True,
+    filters=[_AnchorRelFilter],
+)
 
 
 def sanitize_html(html: str) -> str:
     if not html:
         return ''
-    cleaned = bleach.clean(
-        _drop_active_content(html),
-        tags=ALLOWED_TAGS,
-        attributes=ALLOWED_ATTRS,
-        protocols=ALLOWED_PROTOCOLS,
-        strip=True,
-    )
-    return _ensure_anchor_rel(cleaned)
+    return _CLEANER.clean(_drop_active_content(html))
 
 
 def strip_html(value: str) -> str:
